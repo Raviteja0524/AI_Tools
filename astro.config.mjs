@@ -4,7 +4,7 @@ import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 
-const SITE_URL = 'https://bestaitools.in';
+const SITE_URL = 'https://ai-tools-free24.vercel.app';
 
 export default defineConfig({
   site: SITE_URL,

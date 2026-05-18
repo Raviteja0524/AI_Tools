@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://bestaitools.in/sitemap-index.xml
+Sitemap: https://ai-tools-free24.vercel.app/sitemap-index.xml

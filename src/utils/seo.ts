@@ -1,5 +1,5 @@
 export const SITE_NAME = 'AI Tools';
-export const SITE_URL = 'https://bestaitools.in';
+export const SITE_URL = 'https://ai-tools-free24.vercel.app';
 export const SITE_DESCRIPTION =
   "India's best directory of free AI tools for developers, students, and freelancers. Honest reviews and India-specific pricing.";
 

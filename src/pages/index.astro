@@ -3,16 +3,28 @@ import BaseLayout from '@/components/layout/BaseLayout.astro';
 import Badge from '@/components/ui/Badge.astro';
 import IndiaTag from '@/components/ui/IndiaTag.astro';
 import { getFeaturedTools, getIndiaFavorites, categories, getToolCount, getToolCountByPricing } from '@/utils/tools';
+import { SITE_URL } from '@/utils/seo';
 
 const featured = getFeaturedTools(6);
 const indiaFaves = getIndiaFavorites(4);
 const totalTools = getToolCount();
 const freeCount = getToolCountByPricing('free');
+
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'AI Tools India',
+  url: SITE_URL,
+  logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` },
+  description: "India's #1 directory of free and affordable AI tools for developers, students, and freelancers.",
+  sameAs: ['https://github.com/Raviteja0524/AI_Tools'],
+};
 ---
 
 <BaseLayout
   title="Best Free AI Tools for India 2026 — AI Tools"
   description="India's #1 directory of free and affordable AI tools for developers, students, and freelancers. Discover the best AI tools with honest reviews and India-specific pricing."
+  schema={organizationSchema}
 >
   <!-- ─── Hero ─────────────────────────────────────────── -->
   <section class="hero" aria-labelledby="hero-heading">

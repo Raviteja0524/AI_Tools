@@ -2,11 +2,38 @@
 import BaseLayout from '@/components/layout/BaseLayout.astro';
 import ToolsDirectory from '@/components/tools/ToolsDirectory';
 import { tools, categories } from '@/utils/tools';
+import { SITE_URL } from '@/utils/seo';
+
+const itemListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: "Best AI Tools for India 2026",
+  description: "Curated directory of free and affordable AI tools for Indian developers, students & freelancers.",
+  url: `${SITE_URL}/tools`,
+  numberOfItems: tools.length,
+  itemListElement: tools.slice(0, 20).map((tool, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: tool.name,
+    description: tool.tagline,
+    url: `${SITE_URL}/tools/${tool.slug}`,
+  })),
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+    { '@type': 'ListItem', position: 2, name: 'All AI Tools', item: `${SITE_URL}/tools` },
+  ],
+};
 ---
 
 <BaseLayout
   title="Browse All AI Tools — India's Best AI Tools Directory 2026"
-  description="Browse 23+ curated AI tools for India. Filter by category, pricing, and features. Find free tools, India favorites, and tools that work offline."
+  description={`Browse ${tools.length}+ curated AI tools for India. Filter by category, pricing, and features. Find free tools, India favorites, and tools that work offline.`}
+  schema={[itemListSchema, breadcrumbSchema]}
 >
   <div class="tools-page">
     <div class="container-site">

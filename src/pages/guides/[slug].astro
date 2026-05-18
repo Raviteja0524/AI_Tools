@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '@/components/layout/BaseLayout.astro';
+import { SITE_URL } from '@/utils/seo';
 
 export async function getStaticPaths() {
   const guides = await getCollection('guides');
@@ -37,7 +38,7 @@ const articleSchema = {
   publisher: {
     '@type': 'Organization',
     name: 'AI Tools India',
-    url: 'https://bestaitools.in',
+    url: '${SITE_URL}',
   },
 };
 
@@ -45,9 +46,9 @@ const breadcrumbSchema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bestaitools.in' },
-    { '@type': 'ListItem', position: 2, name: 'Guides', item: 'https://bestaitools.in/guides' },
-    { '@type': 'ListItem', position: 3, name: guide.data.title, item: `https://bestaitools.in/guides/${guide.id}` },
+    { '@type': 'ListItem', position: 1, name: 'Home', item: '${SITE_URL}' },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: '${SITE_URL}/guides' },
+    { '@type': 'ListItem', position: 3, name: guide.data.title, item: `${SITE_URL}/guides/${guide.id}` },
   ],
 };
 ---
@@ -56,7 +57,7 @@ const breadcrumbSchema = {
   title={`${guide.data.title} | AI Tools India`}
   description={guide.data.description}
   schema={[articleSchema, breadcrumbSchema]}
-  canonicalUrl={`https://bestaitools.in/guides/${guide.id}`}
+  canonicalUrl={`${SITE_URL}/guides/${guide.id}`}
 >
   <div class="guide-page">
     <!-- Breadcrumb -->

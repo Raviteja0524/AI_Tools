@@ -23,7 +23,7 @@ const {
   canonicalUrl,
 } = Astro.props;
 
-const siteUrl = 'https://bestaitools.in';
+const siteUrl = 'https://ai-tools-free24.vercel.app';
 const canonical = canonicalUrl ?? new URL(Astro.url.pathname, siteUrl).href;
 const fullTitle = title.includes('AI Tools') ? title : `${title} | AI Tools`;
 const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
@@ -86,6 +86,17 @@ const websiteSchema = {
     <!-- Author / site meta -->
     <meta name="author" content="AI Tools India" />
     <meta name="generator" content="Astro" />
+
+    <!-- India geo targeting -->
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
+    <meta name="language" content="English" />
+    <meta name="target" content="all" />
+
+    <!-- hreflang: primary en-IN audience, fallback en -->
+    <link rel="alternate" hreflang="en-IN" href={canonical} />
+    <link rel="alternate" hreflang="en" href={canonical} />
+    <link rel="alternate" hreflang="x-default" href={canonical} />
 
     <!-- Resource hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
