@@ -1,0 +1,27 @@
+---
+import Badge from './Badge.astro';
+interface Props {
+  pricing: 'free' | 'freemium' | 'paid';
+  indianPricing?: string;
+}
+const { pricing, indianPricing } = Astro.props;
+const labels = { free: '🆓 Free', freemium: '⚡ Freemium', paid: '💰 Paid' };
+---
+<div class="pricing-tag">
+  <Badge variant={pricing}>{labels[pricing]}</Badge>
+  {indianPricing && <span class="inr">{indianPricing}</span>}
+</div>
+
+<style>
+  .pricing-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .inr {
+    font-size: 0.6875rem;
+    color: #71717A;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

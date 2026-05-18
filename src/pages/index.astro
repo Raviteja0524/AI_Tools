@@ -1,0 +1,808 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import Badge from '@/components/ui/Badge.astro';
+import IndiaTag from '@/components/ui/IndiaTag.astro';
+import { getFeaturedTools, getIndiaFavorites, categories, getToolCount, getToolCountByPricing } from '@/utils/tools';
+
+const featured = getFeaturedTools(6);
+const indiaFaves = getIndiaFavorites(4);
+const totalTools = getToolCount();
+const freeCount = getToolCountByPricing('free');
+---
+
+<BaseLayout
+  title="Best Free AI Tools for India 2026 — AI Tools"
+  description="India's #1 directory of free and affordable AI tools for developers, students, and freelancers. Discover the best AI tools with honest reviews and India-specific pricing."
+>
+  <!-- ─── Hero ─────────────────────────────────────────── -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <!-- Background elements -->
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-orb hero-orb-purple"></div>
+      <div class="hero-orb hero-orb-cyan"></div>
+      <div class="hero-grid"></div>
+    </div>
+
+    <div class="container-site hero-content">
+      <!-- Top badge -->
+      <div class="hero-top animate-fade-in">
+        <span class="hero-eyebrow">
+          🇮🇳 India's #1 AI Tools Directory
+        </span>
+      </div>
+
+      <!-- Headline -->
+      <h1 id="hero-heading" class="hero-heading animate-slide-up delay-100">
+        Find the Best
+        <span class="text-gradient"> Free AI Tools</span>
+        <br />for India
+      </h1>
+
+      <p class="hero-sub animate-slide-up delay-200">
+        Discover {totalTools}+ curated AI tools with honest reviews, India-specific pricing,
+        and real use cases for developers, students & freelancers.
+      </p>
+
+      <!-- Stats bar -->
+      <div class="hero-stats animate-slide-up delay-300" role="list" aria-label="Directory statistics">
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num">{totalTools}+</span>
+          <span class="hero-stat-label">Tools Listed</span>
+        </div>
+        <div class="hero-stat-divider" aria-hidden="true"></div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num">{freeCount}+</span>
+          <span class="hero-stat-label">Free Tools</span>
+        </div>
+        <div class="hero-stat-divider" aria-hidden="true"></div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num">8</span>
+          <span class="hero-stat-label">Categories</span>
+        </div>
+        <div class="hero-stat-divider" aria-hidden="true"></div>
+        <div class="hero-stat" role="listitem">
+          <span class="hero-stat-num">100%</span>
+          <span class="hero-stat-label">Honest Reviews</span>
+        </div>
+      </div>
+
+      <!-- Hero search bar -->
+      <form
+        class="hero-search animate-slide-up delay-400"
+        action="/tools"
+        method="get"
+        role="search"
+        aria-label="Search AI tools"
+      >
+        <div class="hero-search-inner">
+          <span class="hero-search-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M13 13l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input
+            type="search"
+            name="q"
+            class="hero-search-input"
+            placeholder="Search 23+ AI tools — try 'free coding' or 'local LLM'..."
+            aria-label="Search AI tools"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="submit" class="hero-search-btn">
+            Search
+          </button>
+        </div>
+      </form>
+
+      <!-- CTAs -->
+      <div class="hero-ctas animate-slide-up delay-500">
+        <a href="/tools?filter=india" class="btn-ghost hero-btn-ghost">
+          🇮🇳 India Favorites
+        </a>
+        <a href="/tools?pricing=free" class="btn-ghost hero-btn-ghost">
+          🆓 Free Only
+        </a>
+        <a href="/tools?filter=offline" class="btn-ghost hero-btn-ghost">
+          📴 Works Offline
+        </a>
+      </div>
+
+      <!-- Quick filter pills -->
+      <div class="hero-filters animate-slide-up delay-500" role="group" aria-label="Quick filters">
+        <a href="/tools?filter=free" class="filter-pill">🆓 Free Tools</a>
+        <a href="/tools?category=coding-assistants" class="filter-pill">💻 Coding AI</a>
+        <a href="/tools?category=local-llms" class="filter-pill">🖥️ Local LLMs</a>
+        <a href="/tools?category=writing-productivity" class="filter-pill">✍️ Writing</a>
+        <a href="/tools?filter=offline" class="filter-pill">📴 Works Offline</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Categories Grid ──────────────────────────────── -->
+  <section class="section" aria-labelledby="categories-heading">
+    <div class="container-site">
+      <div class="section-header">
+        <h2 id="categories-heading">Browse by Category</h2>
+        <p class="section-sub">Every AI use case covered — from writing to local models.</p>
+      </div>
+
+      <ul class="categories-grid" role="list">
+        {categories.map((cat, i) => (
+          <li>
+            <a
+              href={`/tools?category=${cat.id}`}
+              class="category-card"
+              style={`animation-delay: ${i * 60}ms`}
+            >
+              <span class="category-icon" aria-hidden="true">{cat.icon}</span>
+              <div class="category-info">
+                <h3 class="category-name">{cat.name}</h3>
+                <p class="category-desc">{cat.description}</p>
+              </div>
+              <svg class="category-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <hr class="divider-glow" />
+
+  <!-- ─── Featured Tools ───────────────────────────────── -->
+  <section class="section" aria-labelledby="featured-heading">
+    <div class="container-site">
+      <div class="section-header">
+        <div>
+          <h2 id="featured-heading">Trending AI Tools</h2>
+          <p class="section-sub">The most popular tools right now — editor-tested and community-approved.</p>
+        </div>
+        <a href="/tools" class="btn-ghost section-cta">View All →</a>
+      </div>
+
+      <ul class="tools-grid" role="list">
+        {featured.map((tool, i) => (
+          <li>
+            <a
+              href={`/tools/${tool.slug}`}
+              class="tool-card"
+              style={`animation-delay: ${i * 80}ms`}
+              aria-label={`${tool.name} — ${tool.tagline}`}
+            >
+              <div class="tool-card-header">
+                <div class="tool-logo-wrap">
+                  <img
+                    src={tool.logo}
+                    alt={`${tool.name} logo`}
+                    width="40"
+                    height="40"
+                    class="tool-logo"
+                    loading="lazy"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                  />
+                  <div class="tool-logo-fallback" style="display:none" aria-hidden="true">
+                    {tool.name.charAt(0)}
+                  </div>
+                </div>
+                <div class="tool-meta">
+                  <h3 class="tool-name">{tool.name}</h3>
+                  <div class="tool-badges">
+                    {tool.pricing === 'free' && <Badge variant="free" size="sm">Free</Badge>}
+                    {tool.pricing === 'freemium' && <Badge variant="freemium" size="sm">Freemium</Badge>}
+                    {tool.pricing === 'paid' && <Badge variant="paid" size="sm">Paid</Badge>}
+                    {tool.bestForIndia && <IndiaTag size="sm" />}
+                    {tool.freeForever && <Badge variant="free" size="sm">Free Forever</Badge>}
+                  </div>
+                </div>
+                <div class="tool-rating" aria-label={`Rating: ${tool.rating} out of 5`}>
+                  <span class="tool-rating-num">{tool.rating}</span>
+                  <span class="tool-stars" aria-hidden="true">★</span>
+                </div>
+              </div>
+
+              <p class="tool-tagline">{tool.tagline}</p>
+
+              {tool.indianPricing && (
+                <div class="tool-price">
+                  <span class="tool-price-label">India pricing:</span>
+                  <span class="tool-price-val">{tool.indianPricing}</span>
+                </div>
+              )}
+
+              <div class="tool-card-footer">
+                <span class="tool-view">View Details →</span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <hr class="divider-glow" />
+
+  <!-- ─── India Favorites ──────────────────────────────── -->
+  <section class="section india-section" aria-labelledby="india-heading">
+    <div class="india-bg" aria-hidden="true"></div>
+    <div class="container-site">
+      <div class="section-header">
+        <div>
+          <div class="india-eyebrow">🇮🇳 Made for Indian Users</div>
+          <h2 id="india-heading">India's Top AI Picks</h2>
+          <p class="section-sub">Affordable, regional language support, and low-bandwidth friendly.</p>
+        </div>
+        <a href="/tools?filter=india" class="btn-ghost section-cta">All India Picks →</a>
+      </div>
+
+      <ul class="tools-grid-4" role="list">
+        {indiaFaves.map((tool, i) => (
+          <li>
+            <a
+              href={`/tools/${tool.slug}`}
+              class="tool-card tool-card-compact"
+              style={`animation-delay: ${i * 80}ms`}
+              aria-label={`${tool.name} — ${tool.tagline}`}
+            >
+              <div class="tool-card-header">
+                <div class="tool-logo-wrap tool-logo-wrap-sm">
+                  <img
+                    src={tool.logo}
+                    alt={`${tool.name} logo`}
+                    width="32"
+                    height="32"
+                    class="tool-logo"
+                    loading="lazy"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                  />
+                  <div class="tool-logo-fallback tool-logo-fallback-sm" style="display:none" aria-hidden="true">
+                    {tool.name.charAt(0)}
+                  </div>
+                </div>
+                <div class="tool-meta">
+                  <h3 class="tool-name">{tool.name}</h3>
+                  <IndiaTag size="sm" />
+                </div>
+              </div>
+              <p class="tool-tagline tool-tagline-sm">{tool.tagline}</p>
+              {tool.indianPricing && (
+                <p class="tool-inr">{tool.indianPricing}</p>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── Free Tools CTA Banner ───────────────────────── -->
+  <section class="cta-banner-section">
+    <div class="container-site">
+      <div class="cta-banner">
+        <div class="cta-banner-glow" aria-hidden="true"></div>
+        <div class="cta-banner-content">
+          <div class="cta-banner-text">
+            <h2 class="cta-banner-title">Looking for 100% Free AI Tools?</h2>
+            <p class="cta-banner-sub">
+              {freeCount}+ tools that cost absolutely nothing — no trials, no credit cards. Free forever.
+            </p>
+          </div>
+          <div class="cta-banner-actions">
+            <a href="/tools?filter=free" class="btn-primary">
+              🆓 Browse Free Tools
+            </a>
+            <a href="/tools?filter=offline" class="btn-ghost">
+              📴 Works Offline
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ─── Hero ──────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    padding: clamp(4rem, 10vw, 7rem) 0 clamp(3rem, 8vw, 5rem);
+    overflow: hidden;
+    text-align: center;
+  }
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+  }
+  .hero-orb-purple {
+    width: 600px;
+    height: 400px;
+    background: #7C3AED;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .hero-orb-cyan {
+    width: 400px;
+    height: 300px;
+    background: #06B6D4;
+    bottom: -50px;
+    right: 10%;
+    opacity: 0.12;
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(#1F1F2E22 1px, transparent 1px),
+      linear-gradient(90deg, #1F1F2E22 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 100%);
+  }
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .hero-top { display: flex; justify-content: center; }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: #7C3AED15;
+    color: #C4B5FD;
+    border: 1px solid #7C3AED30;
+    letter-spacing: 0.01em;
+  }
+  .hero-heading {
+    font-size: clamp(2.25rem, 6vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+    max-width: 16ch;
+  }
+  .hero-sub {
+    font-size: clamp(0.9375rem, 2vw, 1.125rem);
+    color: #A1A1AA;
+    max-width: 48ch;
+    margin: 0;
+    line-height: 1.65;
+  }
+
+  /* Hero search */
+  .hero-search {
+    width: 100%;
+    max-width: 560px;
+  }
+  .hero-search-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #111116;
+    border: 1px solid #2D2D3E;
+    border-radius: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+  }
+  .hero-search-inner:focus-within {
+    border-color: #7C3AED60;
+    box-shadow: 0 0 0 3px #7C3AED18, 0 0 40px #7C3AED18;
+  }
+  .hero-search-icon {
+    position: absolute;
+    left: 16px;
+    color: #52525B;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+  .hero-search-input {
+    flex: 1;
+    height: 52px;
+    padding: 0 0.75rem 0 50px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #F8F8F8;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .hero-search-input::placeholder { color: #3F3F46; }
+  .hero-search-input::-webkit-search-cancel-button { display: none; }
+  .hero-search-btn {
+    flex-shrink: 0;
+    height: 40px;
+    margin: 6px 6px 6px 0;
+    padding: 0 1.125rem;
+    border-radius: 9px;
+    border: none;
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #F8F8F8;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+  }
+  .hero-search-btn:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 16px #7C3AED40;
+  }
+
+  /* Stats */
+  .hero-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: #111116;
+    border: 1px solid #1F1F2E;
+    border-radius: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+  }
+  .hero-stat-num {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #F8F8F8;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .hero-stat-label {
+    font-size: 0.6875rem;
+    color: #71717A;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .hero-stat-divider {
+    width: 1px;
+    height: 28px;
+    background: #1F1F2E;
+    flex-shrink: 0;
+  }
+
+  /* CTAs */
+  .hero-ctas {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-btn-primary { font-size: 0.9375rem; padding: 0.625rem 1.375rem; }
+  .hero-btn-ghost { font-size: 0.9375rem; padding: 0.625rem 1.375rem; }
+
+  /* Quick filters */
+  .hero-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .filter-pill {
+    padding: 0.3125rem 0.875rem;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #A1A1AA;
+    border: 1px solid #1F1F2E;
+    background: transparent;
+    text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .filter-pill:hover {
+    border-color: #7C3AED50;
+    color: #F8F8F8;
+    background: #7C3AED10;
+  }
+
+  /* ─── Section Headers ──────────────────────────────── */
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .section-header h2 { margin: 0; }
+  .section-sub {
+    color: #71717A;
+    font-size: 0.9375rem;
+    margin: 0.25rem 0 0;
+  }
+  .section-cta { white-space: nowrap; }
+
+  /* ─── Categories ───────────────────────────────────── */
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .category-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.125rem;
+    border-radius: 12px;
+    background: #111116;
+    border: 1px solid #1F1F2E;
+    text-decoration: none;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    animation: slideUp 0.5s ease both;
+  }
+  .category-card:hover {
+    border-color: #7C3AED40;
+    background: #17171F;
+    transform: translateY(-1px);
+  }
+  .category-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    width: 40px;
+    text-align: center;
+  }
+  .category-info { flex: 1; min-width: 0; }
+  .category-name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #F8F8F8;
+    margin: 0 0 0.125rem;
+    letter-spacing: -0.01em;
+  }
+  .category-desc {
+    font-size: 0.75rem;
+    color: #71717A;
+    margin: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .category-arrow {
+    color: #3F3F46;
+    flex-shrink: 0;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .category-card:hover .category-arrow {
+    color: #7C3AED;
+    transform: translateX(2px);
+  }
+
+  /* ─── Tools Grid ───────────────────────────────────── */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .tools-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Tool card */
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #17171F 0%, #111116 100%);
+    border: 1px solid #1F1F2E;
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    animation: slideUp 0.5s ease both;
+    height: 100%;
+  }
+  .tool-card:hover {
+    border-color: #7C3AED40;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px #00000070, 0 0 0 1px #7C3AED15;
+  }
+  .tool-card-compact { gap: 0.5rem; padding: 1rem; }
+
+  .tool-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .tool-logo-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #1F1F2E;
+    background: #17171F;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .tool-logo-wrap-sm { width: 36px; height: 36px; }
+  .tool-logo { width: 100%; height: 100%; object-fit: contain; }
+  .tool-logo-fallback {
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #7C3AED;
+    background: #7C3AED15;
+  }
+  .tool-logo-fallback-sm { font-size: 0.875rem; }
+
+  .tool-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  .tool-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #F8F8F8;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .tool-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .tool-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .tool-rating-num {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #F8F8F8;
+  }
+  .tool-stars { color: #F59E0B; font-size: 0.875rem; }
+
+  .tool-tagline {
+    font-size: 0.8125rem;
+    color: #A1A1AA;
+    margin: 0;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .tool-tagline-sm { font-size: 0.75rem; }
+
+  .tool-price {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+  }
+  .tool-price-label { color: #52525B; }
+  .tool-price-val { color: #A1A1AA; font-weight: 500; }
+  .tool-inr { font-size: 0.6875rem; color: #52525B; margin: 0; }
+
+  .tool-card-footer { margin-top: auto; }
+  .tool-view {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #7C3AED;
+    transition: color 0.15s ease;
+  }
+  .tool-card:hover .tool-view { color: #9D65F5; }
+
+  /* ─── India Section ────────────────────────────────── */
+  .india-section { position: relative; }
+  .india-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 0% 50%, #FF671F08 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 100% 50%, #04662008 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .india-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #F59E0B;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.375rem;
+  }
+
+  /* ─── CTA Banner ──────────────────────────────────── */
+  .cta-banner-section {
+    padding: 4rem 0 5rem;
+  }
+  .cta-banner {
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid #7C3AED30;
+    background: linear-gradient(135deg, #7C3AED10 0%, #06B6D408 100%);
+    padding: clamp(2rem, 5vw, 3rem);
+    overflow: hidden;
+  }
+  .cta-banner-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 300px;
+    background: radial-gradient(ellipse at center, #7C3AED20, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-banner-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .cta-banner-title {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+  .cta-banner-sub {
+    font-size: 0.9375rem;
+    color: #A1A1AA;
+    margin: 0;
+  }
+  .cta-banner-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  /* ─── Responsive ─────────────────────────────────── */
+  @media (max-width: 767px) {
+    .section-header { flex-direction: column; align-items: flex-start; }
+    .hero-stat-divider { display: none; }
+    .hero-stats { gap: 1rem; }
+    .cta-banner-content { flex-direction: column; }
+    .cta-banner-actions { width: 100%; }
+    .cta-banner-actions > * { flex: 1; justify-content: center; }
+  }
+</style>

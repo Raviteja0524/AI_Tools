@@ -1,0 +1,26 @@
+---
+interface Props {
+  size?: 'sm' | 'md';
+}
+const { size = 'md' } = Astro.props;
+---
+<span class:list={['india-tag', size === 'sm' && 'india-tag-sm']}>
+  🇮🇳 Best for India
+</span>
+
+<style>
+  .india-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(255, 103, 31, 0.12), rgba(4, 106, 56, 0.12));
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    white-space: nowrap;
+  }
+  .india-tag-sm { font-size: 0.625rem; padding: 0.125rem 0.5rem; }
+</style>

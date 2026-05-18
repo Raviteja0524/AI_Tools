@@ -1,0 +1,1290 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import Badge from '@/components/ui/Badge.astro';
+import IndiaTag from '@/components/ui/IndiaTag.astro';
+import { tools, getRelatedTools, getCategoryById } from '@/utils/tools';
+import { toolSeoTitle, toolSeoDescription, buildSchemaForTool, buildBreadcrumbSchema, SITE_URL } from '@/utils/seo';
+import type { Tool } from '@/utils/tools';
+
+export function getStaticPaths() {
+  return tools.map(tool => ({
+    params: { slug: tool.slug },
+    props: { tool },
+  }));
+}
+
+const { tool } = Astro.props as { tool: Tool };
+const related = getRelatedTools(tool, 4);
+const category = getCategoryById(tool.category);
+const affiliateUrl = tool.affiliateUrl ?? tool.url;
+
+const toolSchema = buildSchemaForTool({
+  ...tool,
+  logo: tool.logo,
+});
+const breadcrumbSchema = buildBreadcrumbSchema([
+  { name: 'Home',  url: SITE_URL },
+  { name: 'Tools', url: `${SITE_URL}/tools` },
+  ...(category ? [{ name: category.name, url: `${SITE_URL}/tools?category=${category.id}` }] : []),
+  { name: tool.name, url: `${SITE_URL}/tools/${tool.slug}` },
+]);
+
+// Derive star display
+const fullStars = Math.floor(tool.rating);
+const hasHalf = tool.rating % 1 >= 0.5;
+const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+// Top 3 highlights from pros
+const highlights = tool.pros.slice(0, 3);
+
+// Pricing display
+const PRICING_COLOR = {
+  free: { bg: '#22C55E12', border: '#22C55E30', text: '#22C55E', label: 'Free' },
+  freemium: { bg: '#F59E0B12', border: '#F59E0B30', text: '#F59E0B', label: 'Freemium' },
+  paid: { bg: '#EF444412', border: '#EF444430', text: '#EF4444', label: 'Paid' },
+};
+const pricingStyle = PRICING_COLOR[tool.pricing];
+
+// Use-case tags (human-readable)
+const TAG_LABELS: Record<string, string> = {
+  students: 'Students',
+  'india-popular': 'India Popular',
+  coding: 'Coding',
+  writing: 'Writing',
+  research: 'Research',
+  offline: 'Offline Use',
+  local: 'Runs Locally',
+  free: 'Free',
+  'free-for-students': 'Free for Students',
+  'open-source': 'Open Source',
+  privacy: 'Privacy-First',
+  education: 'Education',
+  design: 'Design',
+  'image-gen': 'Image Generation',
+  'voice': 'Voice',
+  'audio': 'Audio',
+  'music': 'Music',
+  'transcription': 'Transcription',
+  'pdf': 'PDF Analysis',
+  freelancers: 'Freelancers',
+  affordable: 'Affordable',
+};
+---
+
+<BaseLayout
+  title={toolSeoTitle(tool.name)}
+  description={toolSeoDescription(tool)}
+  ogType="article"
+  schema={[toolSchema, breadcrumbSchema]}
+>
+  <!-- Mobile sticky CTA (renders at bottom of viewport) -->
+  <div class="mobile-sticky-cta" aria-hidden="true">
+    <a
+      href={affiliateUrl}
+      target="_blank"
+      rel="noopener noreferrer nofollow sponsored"
+      class="mobile-sticky-btn"
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Visit {tool.name}
+    </a>
+    {tool.indianPricing && (
+      <span class="mobile-sticky-price">{tool.indianPricing}</span>
+    )}
+  </div>
+
+  <div class="tool-detail">
+    <!-- ── Breadcrumb ─────────────────────────────────── -->
+    <div class="container-site">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="/tools">Tools</a>
+        {category && <>
+          <span aria-hidden="true">›</span>
+          <a href={`/tools?category=${category.id}`}>{category.name}</a>
+        </>}
+        <span aria-hidden="true">›</span>
+        <span aria-current="page">{tool.name}</span>
+      </nav>
+    </div>
+
+    <!-- ── Hero ──────────────────────────────────────── -->
+    <div class="hero-band">
+      <div class="hero-band-bg" aria-hidden="true">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+      </div>
+      <div class="container-site">
+        <div class="hero-layout">
+          <!-- Left: identity block -->
+          <div class="hero-identity">
+            <div class="hero-logo-wrap">
+              <img
+                src={tool.logo}
+                alt={`${tool.name} logo`}
+                width="80"
+                height="80"
+                class="hero-logo"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+              />
+              <div class="hero-logo-fallback" aria-hidden="true">
+                {tool.name.charAt(0)}
+              </div>
+            </div>
+
+            <div class="hero-text">
+              <div class="hero-badges">
+                {tool.pricing === 'free' && <Badge variant="free">🆓 Free</Badge>}
+                {tool.pricing === 'freemium' && <Badge variant="freemium">⚡ Freemium</Badge>}
+                {tool.pricing === 'paid' && <Badge variant="paid">💰 Paid</Badge>}
+                {tool.freeForever && <Badge variant="free">♾️ Free Forever</Badge>}
+                {tool.bestForIndia && <IndiaTag />}
+                {tool.featured && <Badge variant="new">⭐ Featured</Badge>}
+              </div>
+              <h1 class="hero-name">{tool.name}</h1>
+              <p class="hero-tagline">{tool.tagline}</p>
+
+              <!-- Rating row -->
+              <div class="hero-rating" aria-label={`Rating: ${tool.rating} out of 5`}>
+                <span class="stars" aria-hidden="true">
+                  {'★'.repeat(fullStars)}{hasHalf ? '⯨' : ''}{'☆'.repeat(emptyStars)}
+                </span>
+                <strong class="rating-num">{tool.rating}</strong>
+                <span class="rating-slash">/5</span>
+                {tool.reviewCount && (
+                  <span class="rating-count">
+                    ({tool.reviewCount.toLocaleString('en-IN')} reviews)
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: CTA block -->
+          <div class="hero-cta-block">
+            <a
+              href={affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow sponsored"
+              class="hero-visit-btn"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Visit {tool.name}
+            </a>
+            {tool.indianPricing && (
+              <div class="hero-price-tag">
+                <span class="hero-price-label">India pricing</span>
+                <span class="hero-price-val">{tool.indianPricing}</span>
+              </div>
+            )}
+            <a href={tool.url} target="_blank" rel="noopener noreferrer" class="hero-official-link">
+              Official website ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="hero-stats" role="list">
+          <div class="hero-stat" role="listitem">
+            <span class="hero-stat-label">Category</span>
+            <a href={`/tools?category=${tool.category}`} class="hero-stat-val hero-stat-link">
+              {category?.icon} {category?.name ?? tool.category}
+            </a>
+          </div>
+          <div class="hero-stat-sep" aria-hidden="true"></div>
+          <div class="hero-stat" role="listitem">
+            <span class="hero-stat-label">Pricing</span>
+            <span class="hero-stat-val" style={`color: ${pricingStyle.text}`}>
+              {pricingStyle.label}
+            </span>
+          </div>
+          {tool.bestForIndia && <>
+            <div class="hero-stat-sep" aria-hidden="true"></div>
+            <div class="hero-stat" role="listitem">
+              <span class="hero-stat-label">India</span>
+              <span class="hero-stat-val" style="color: #F59E0B">🇮🇳 Recommended</span>
+            </div>
+          </>}
+          {tool.freeForever && <>
+            <div class="hero-stat-sep" aria-hidden="true"></div>
+            <div class="hero-stat" role="listitem">
+              <span class="hero-stat-label">Cost</span>
+              <span class="hero-stat-val" style="color: #22C55E">♾️ Free forever</span>
+            </div>
+          </>}
+          {tool.languages && tool.languages.length > 0 && <>
+            <div class="hero-stat-sep" aria-hidden="true"></div>
+            <div class="hero-stat" role="listitem">
+              <span class="hero-stat-label">Languages</span>
+              <span class="hero-stat-val">{tool.languages.length}+ supported</span>
+            </div>
+          </>}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Body ──────────────────────────────────────── -->
+    <div class="container-site">
+      <div class="body-grid">
+
+        <!-- ── MAIN COLUMN ─────────────────────────── -->
+        <main class="main-col">
+
+          <!-- About -->
+          <section class="content-section" aria-labelledby="about-heading">
+            <h2 id="about-heading" class="section-heading">
+              About {tool.name}
+            </h2>
+            <p class="body-text">{tool.description}</p>
+          </section>
+
+          <!-- Key highlights (from pros) -->
+          <section class="content-section" aria-labelledby="highlights-heading">
+            <h2 id="highlights-heading" class="section-heading">Key Highlights</h2>
+            <ul class="highlights-grid" role="list">
+              {highlights.map((h, i) => (
+                <li class="highlight-card">
+                  <span class="highlight-num" aria-hidden="true">0{i + 1}</span>
+                  <p class="highlight-text">{h}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <!-- Pros & Cons -->
+          <section class="content-section" aria-labelledby="proscons-heading">
+            <h2 id="proscons-heading" class="section-heading">Pros &amp; Cons</h2>
+            <div class="pros-cons">
+              <div class="pros-block">
+                <div class="pc-header pc-header-pro">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M2 7l3.5 3.5L12 3" stroke="#22C55E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Pros
+                </div>
+                <ul class="pc-list">
+                  {tool.pros.map(p => (
+                    <li class="pc-item pc-item-pro">
+                      <span class="pc-dot" aria-hidden="true"></span>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div class="cons-block">
+                <div class="pc-header pc-header-con">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="#F59E0B" stroke-width="1.75" stroke-linecap="round"/>
+                  </svg>
+                  Cons
+                </div>
+                <ul class="pc-list">
+                  {tool.cons.map(c => (
+                    <li class="pc-item pc-item-con">
+                      <span class="pc-dot" aria-hidden="true"></span>
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- India Spotlight (conditional) -->
+          {tool.bestForIndia && (
+            <section class="content-section india-spotlight" aria-labelledby="india-heading">
+              <div class="india-spotlight-inner">
+                <div class="india-spotlight-icon" aria-hidden="true">🇮🇳</div>
+                <div>
+                  <h2 id="india-heading" class="section-heading" style="margin-bottom: 0.5rem;">
+                    Why It's Great for India
+                  </h2>
+                  <p class="body-text" style="margin-bottom: 0.875rem;">
+                    {tool.name} earns its India Recommended badge for a reason. Here's why Indian
+                    developers, students, and freelancers love it:
+                  </p>
+                  <ul class="india-list">
+                    {tool.indianPricing && (
+                      <li>
+                        <strong>Affordable pricing</strong> — {tool.indianPricing} vs. expensive USD plans
+                      </li>
+                    )}
+                    {tool.freeForever && (
+                      <li>
+                        <strong>Completely free</strong> — no credit card, no hidden costs, no trial expiry
+                      </li>
+                    )}
+                    {tool.languages && tool.languages.some(l => l !== 'English') && (
+                      <li>
+                        <strong>Indian language support</strong> — works in{' '}
+                        {tool.languages.filter(l => l !== 'English').join(', ')}
+                      </li>
+                    )}
+                    {tool.tags.includes('offline') && (
+                      <li>
+                        <strong>Works offline</strong> — no dependency on fast internet; runs locally on your machine
+                      </li>
+                    )}
+                    {tool.tags.includes('students') && (
+                      <li>
+                        <strong>Student-friendly</strong> — widely used across Indian colleges for assignments, research, and projects
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <!-- Pricing details -->
+          <section class="content-section" aria-labelledby="pricing-heading">
+            <h2 id="pricing-heading" class="section-heading">Pricing</h2>
+            <div class="pricing-card" style={`border-color: ${pricingStyle.border}; background: ${pricingStyle.bg}`}>
+              <div class="pricing-card-header">
+                <span class="pricing-type-badge" style={`color: ${pricingStyle.text}; border-color: ${pricingStyle.border}; background: ${pricingStyle.bg}`}>
+                  {pricingStyle.label}
+                </span>
+                {tool.freeForever && (
+                  <span class="pricing-forever-badge">♾️ No credit card ever</span>
+                )}
+              </div>
+              {tool.indianPricing ? (
+                <p class="pricing-inr">
+                  <span class="pricing-inr-label">India:</span>
+                  <strong class="pricing-inr-val">{tool.indianPricing}</strong>
+                </p>
+              ) : (
+                <p class="body-text" style="margin: 0;">
+                  Check the official site for current pricing in your region.
+                </p>
+              )}
+              <a
+                href={affiliateUrl}
+                target="_blank"
+                rel="noopener noreferrer nofollow sponsored"
+                class="pricing-visit-link"
+              >
+                See full pricing on {tool.name} ↗
+              </a>
+            </div>
+          </section>
+
+          <!-- Supported languages -->
+          {tool.languages && tool.languages.length > 0 && (
+            <section class="content-section" aria-labelledby="languages-heading">
+              <h2 id="languages-heading" class="section-heading">Supported Languages</h2>
+              <div class="chip-list">
+                {tool.languages.map(lang => (
+                  <span class="lang-chip">{lang}</span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <!-- Use cases / Tags -->
+          <section class="content-section" aria-labelledby="usecases-heading">
+            <h2 id="usecases-heading" class="section-heading">Use Cases &amp; Tags</h2>
+            <div class="chip-list">
+              {tool.tags.map(tag => (
+                <a href={`/tools?filter=${tag}`} class="tag-chip">
+                  {TAG_LABELS[tag] ?? tag}
+                </a>
+              ))}
+            </div>
+          </section>
+        </main>
+
+        <!-- ── SIDEBAR ──────────────────────────────── -->
+        <aside class="sidebar-col">
+          <!-- Sticky CTA card -->
+          <div class="sidebar-cta-card">
+            <a
+              href={affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow sponsored"
+              class="sidebar-visit-btn"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Visit {tool.name}
+            </a>
+            {tool.indianPricing && (
+              <p class="sidebar-cta-price">{tool.indianPricing}</p>
+            )}
+            <p class="sidebar-cta-note">Opens official site — affiliate link may apply</p>
+          </div>
+
+          <!-- Quick info -->
+          <div class="sidebar-info-card">
+            <h3 class="sidebar-card-title">Quick Info</h3>
+            <dl class="info-dl">
+              <div class="info-row">
+                <dt>Category</dt>
+                <dd>
+                  <a href={`/tools?category=${tool.category}`} class="info-link">
+                    {category?.icon} {category?.name ?? tool.category}
+                  </a>
+                </dd>
+              </div>
+              <div class="info-row">
+                <dt>Pricing</dt>
+                <dd style={`color: ${pricingStyle.text}`}>{pricingStyle.label}</dd>
+              </div>
+              {tool.indianPricing && (
+                <div class="info-row">
+                  <dt>India cost</dt>
+                  <dd>{tool.indianPricing}</dd>
+                </div>
+              )}
+              <div class="info-row">
+                <dt>India rating</dt>
+                <dd>{tool.bestForIndia ? '🇮🇳 Recommended' : '—'}</dd>
+              </div>
+              <div class="info-row">
+                <dt>Free forever</dt>
+                <dd>{tool.freeForever ? '✅ Yes' : 'No'}</dd>
+              </div>
+              <div class="info-row">
+                <dt>Works offline</dt>
+                <dd>{tool.tags.includes('offline') ? '✅ Yes' : 'No'}</dd>
+              </div>
+              <div class="info-row">
+                <dt>Rating</dt>
+                <dd>
+                  <span aria-label={`${tool.rating} out of 5`}>
+                    {tool.rating} ★
+                    {tool.reviewCount && <span class="info-review-ct">({tool.reviewCount.toLocaleString('en-IN')})</span>}
+                  </span>
+                </dd>
+              </div>
+              <div class="info-row">
+                <dt>Listed</dt>
+                <dd>{new Date(tool.dateAdded).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Related tools -->
+          {related.length > 0 && (
+            <div class="sidebar-related-card">
+              <h3 class="sidebar-card-title">Similar Tools</h3>
+              <ul class="related-list" role="list">
+                {related.map(r => (
+                  <li>
+                    <a href={`/tools/${r.slug}`} class="related-row">
+                      <div class="related-logo-wrap">
+                        <img
+                          src={r.logo}
+                          alt=""
+                          width="28"
+                          height="28"
+                          class="related-logo"
+                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                        />
+                        <div class="related-logo-fallback" aria-hidden="true">{r.name.charAt(0)}</div>
+                      </div>
+                      <div class="related-info">
+                        <span class="related-name">{r.name}</span>
+                        <span class="related-tagline">{r.tagline.slice(0, 48)}{r.tagline.length > 48 ? '…' : ''}</span>
+                      </div>
+                      <span class="related-rating">{r.rating}★</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a href={`/tools?category=${tool.category}`} class="related-see-all">
+                See all {category?.name} tools →
+              </a>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <!-- ── Related tools full grid ──────────────── -->
+      {related.length > 0 && (
+        <section class="related-section" aria-labelledby="related-heading">
+          <div class="related-header">
+            <h2 id="related-heading" class="section-heading" style="margin-bottom: 0">
+              More {category?.name} Tools
+            </h2>
+            <a href={`/tools?category=${tool.category}`} class="related-all-link">
+              Browse all →
+            </a>
+          </div>
+          <ul class="related-grid" role="list">
+            {related.map(r => (
+              <li>
+                <a href={`/tools/${r.slug}`} class="rg-card">
+                  <div class="rg-header">
+                    <div class="rg-logo-wrap">
+                      <img
+                        src={r.logo}
+                        alt=""
+                        width="40"
+                        height="40"
+                        class="rg-logo"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                      />
+                      <div class="rg-logo-fallback" aria-hidden="true">{r.name.charAt(0)}</div>
+                    </div>
+                    <div class="rg-meta">
+                      <span class="rg-name">{r.name}</span>
+                      <div class="rg-badges">
+                        {r.pricing === 'free' && <span class="rg-badge rg-free">Free</span>}
+                        {r.pricing === 'freemium' && <span class="rg-badge rg-freemium">Freemium</span>}
+                        {r.pricing === 'paid' && <span class="rg-badge rg-paid">Paid</span>}
+                        {r.bestForIndia && <span class="rg-badge rg-india">🇮🇳</span>}
+                      </div>
+                    </div>
+                    <span class="rg-rating">{r.rating}★</span>
+                  </div>
+                  <p class="rg-tagline">{r.tagline}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <!-- ── Bottom CTA banner ─────────────────────── -->
+      <div class="bottom-cta">
+        <div class="bottom-cta-glow" aria-hidden="true"></div>
+        <div class="bottom-cta-content">
+          <div>
+            <p class="bottom-cta-eyebrow">Ready to try it?</p>
+            <h2 class="bottom-cta-title">Get started with {tool.name}</h2>
+            <p class="bottom-cta-sub">
+              {tool.freeForever
+                ? 'Completely free — no credit card, no trial, no catch.'
+                : tool.pricing === 'freemium'
+                  ? 'Start for free. Upgrade only if you need more.'
+                  : 'Visit the official site to see current pricing.'}
+            </p>
+          </div>
+          <div class="bottom-cta-actions">
+            <a
+              href={affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow sponsored"
+              class="bottom-cta-btn-primary"
+            >
+              Visit {tool.name} ↗
+            </a>
+            <a href="/tools" class="bottom-cta-btn-ghost">
+              ← Browse more tools
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* ── Layout ─────────────────────────────────────── */
+  .tool-detail {
+    padding-bottom: 5rem;
+  }
+
+  /* ── Breadcrumb ─────────────────────────────────── */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+    color: #52525B;
+    padding: 1.5rem 0 0;
+  }
+  .breadcrumb a {
+    color: #71717A;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .breadcrumb a:hover { color: #A1A1AA; }
+
+  /* ── Hero band ──────────────────────────────────── */
+  .hero-band {
+    position: relative;
+    margin-top: 1.25rem;
+    padding: 2.5rem 0 0;
+    overflow: hidden;
+  }
+  .hero-band-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+  }
+  .hero-orb-1 {
+    width: 500px;
+    height: 300px;
+    background: #7C3AED;
+    opacity: 0.12;
+    top: -80px;
+    left: -100px;
+  }
+  .hero-orb-2 {
+    width: 350px;
+    height: 200px;
+    background: #06B6D4;
+    opacity: 0.07;
+    top: 0;
+    right: -50px;
+  }
+
+  .hero-layout {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-logo-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 18px;
+    border: 1px solid #2D2D3E;
+    background: #17171F;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero-logo { width: 100%; height: 100%; object-fit: contain; }
+  .hero-logo-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #7C3AED;
+    background: #7C3AED15;
+  }
+
+  .hero-text { flex: 1; min-width: 0; }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.625rem; }
+  .hero-name {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.375rem;
+    line-height: 1.1;
+  }
+  .hero-tagline {
+    font-size: 1rem;
+    color: #A1A1AA;
+    margin: 0 0 0.875rem;
+    line-height: 1.5;
+  }
+
+  .hero-rating { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .stars { color: #F59E0B; font-size: 1.125rem; letter-spacing: 1px; line-height: 1; }
+  .rating-num { font-size: 1rem; font-weight: 800; color: #F8F8F8; }
+  .rating-slash { font-size: 0.875rem; color: #52525B; }
+  .rating-count { font-size: 0.8125rem; color: #52525B; }
+
+  /* CTA block */
+  .hero-cta-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.625rem;
+    flex-shrink: 0;
+  }
+  .hero-visit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6875rem 1.375rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #F8F8F8;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 0 24px #7C3AED30;
+    transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .hero-visit-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 0 32px #7C3AED50;
+  }
+  .hero-price-tag { text-align: right; }
+  .hero-price-label { display: block; font-size: 0.625rem; color: #52525B; text-transform: uppercase; letter-spacing: 0.05em; }
+  .hero-price-val { font-size: 0.9375rem; font-weight: 700; color: #A1A1AA; }
+  .hero-official-link { font-size: 0.75rem; color: #52525B; text-decoration: none; transition: color 0.15s; }
+  .hero-official-link:hover { color: #A1A1AA; }
+
+  /* Stats strip */
+  .hero-stats {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 2rem;
+    border-top: 1px solid #1F1F2E;
+    border-bottom: 1px solid #1F1F2E;
+    padding: 0.875rem 0;
+  }
+  .hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0 1.25rem 0 0;
+  }
+  .hero-stat:first-child { padding-left: 0; }
+  .hero-stat-label { font-size: 0.625rem; font-weight: 600; color: #52525B; text-transform: uppercase; letter-spacing: 0.07em; }
+  .hero-stat-val { font-size: 0.875rem; font-weight: 600; color: #A1A1AA; }
+  .hero-stat-link { text-decoration: none; transition: color 0.15s; }
+  .hero-stat-link:hover { color: #C4B5FD; }
+  .hero-stat-sep { width: 1px; height: 32px; background: #1F1F2E; margin-right: 1.25rem; flex-shrink: 0; }
+
+  /* ── Body grid ──────────────────────────────────── */
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 2.5rem;
+    align-items: start;
+    padding-top: 2.5rem;
+  }
+
+  /* ── Main column ────────────────────────────────── */
+  .content-section {
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #1F1F2E;
+  }
+  .content-section:last-child { border-bottom: none; }
+  .section-heading {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #F8F8F8;
+    margin: 0 0 1.125rem;
+    letter-spacing: -0.01em;
+  }
+  .body-text {
+    font-size: 0.9375rem;
+    color: #A1A1AA;
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  /* Key highlights */
+  .highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .highlight-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #111116;
+    border: 1px solid #1F1F2E;
+  }
+  .highlight-num {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    color: #7C3AED;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .highlight-text {
+    font-size: 0.8125rem;
+    color: #A1A1AA;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Pros & Cons */
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .pros-block, .cons-block {
+    padding: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid;
+  }
+  .pros-block { border-color: #22C55E25; background: #22C55E08; }
+  .cons-block { border-color: #F59E0B25; background: #F59E0B08; }
+
+  .pc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pc-header-pro { color: #22C55E; }
+  .pc-header-con { color: #F59E0B; }
+
+  .pc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  .pc-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    font-size: 0.8125rem;
+    color: #A1A1AA;
+    line-height: 1.5;
+  }
+  .pc-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .pc-item-pro .pc-dot { background: #22C55E; }
+  .pc-item-con .pc-dot { background: #F59E0B; }
+
+  /* India Spotlight */
+  .india-spotlight {
+    background: linear-gradient(135deg, #FF671F08, #04662008);
+    border: 1px solid #F59E0B25;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .india-spotlight-inner { display: flex; gap: 1rem; align-items: flex-start; }
+  .india-spotlight-icon { font-size: 2rem; flex-shrink: 0; margin-top: 0.125rem; }
+  .india-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .india-list li {
+    font-size: 0.875rem;
+    color: #A1A1AA;
+    padding-left: 1rem;
+    position: relative;
+    line-height: 1.5;
+  }
+  .india-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #F59E0B;
+    font-weight: 700;
+  }
+  .india-list strong { color: #F8F8F8; }
+
+  /* Pricing card */
+  .pricing-card {
+    padding: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .pricing-card-header { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  .pricing-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid;
+  }
+  .pricing-forever-badge {
+    font-size: 0.75rem;
+    color: #22C55E;
+    font-weight: 600;
+  }
+  .pricing-inr { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
+  .pricing-inr-label { font-size: 0.8125rem; color: #52525B; }
+  .pricing-inr-val { font-size: 1.125rem; font-weight: 700; color: #F8F8F8; }
+  .pricing-visit-link { font-size: 0.8125rem; color: #7C3AED; text-decoration: none; transition: color 0.15s; }
+  .pricing-visit-link:hover { color: #9D65F5; }
+
+  /* Chips */
+  .chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .lang-chip {
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    background: #17171F;
+    border: 1px solid #2D2D3E;
+    color: #A1A1AA;
+  }
+  .tag-chip {
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    background: #7C3AED10;
+    border: 1px solid #7C3AED30;
+    color: #C4B5FD;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .tag-chip:hover { background: #7C3AED20; border-color: #7C3AED50; }
+
+  /* ── Sidebar ─────────────────────────────────────── */
+  .sidebar-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 80px;
+  }
+
+  /* CTA card */
+  .sidebar-cta-card {
+    padding: 1.25rem;
+    border-radius: 14px;
+    border: 1px solid #7C3AED40;
+    background: linear-gradient(135deg, #7C3AED12, #111116);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .sidebar-visit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6875rem 1rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #F8F8F8;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 0 20px #7C3AED30;
+    transition: opacity 0.15s, box-shadow 0.15s;
+  }
+  .sidebar-visit-btn:hover { opacity: 0.9; box-shadow: 0 0 28px #7C3AED50; }
+  .sidebar-cta-price {
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #A1A1AA;
+    margin: 0;
+  }
+  .sidebar-cta-note {
+    text-align: center;
+    font-size: 0.6875rem;
+    color: #3F3F46;
+    margin: 0;
+  }
+
+  /* Info card */
+  .sidebar-info-card {
+    padding: 1.125rem;
+    border-radius: 14px;
+    border: 1px solid #1F1F2E;
+    background: #111116;
+  }
+  .sidebar-card-title {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #52525B;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.875rem;
+  }
+  .info-dl { margin: 0; display: flex; flex-direction: column; gap: 0; }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #1F1F2E;
+    font-size: 0.8125rem;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row dt { color: #52525B; flex-shrink: 0; }
+  .info-row dd { color: #A1A1AA; font-weight: 500; margin: 0; text-align: right; }
+  .info-link { color: #A1A1AA; text-decoration: none; transition: color 0.15s; }
+  .info-link:hover { color: #C4B5FD; }
+  .info-review-ct { font-size: 0.625rem; color: #52525B; }
+
+  /* Related sidebar */
+  .sidebar-related-card {
+    padding: 1.125rem;
+    border-radius: 14px;
+    border: 1px solid #1F1F2E;
+    background: #111116;
+  }
+  .related-list { list-style: none; padding: 0; margin: 0 0 0.75rem; display: flex; flex-direction: column; }
+  .related-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0;
+    border-bottom: 1px solid #1F1F2E;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .related-row:last-child { border-bottom: none; }
+  .related-row:hover { opacity: 0.8; }
+  .related-logo-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    border: 1px solid #1F1F2E;
+    background: #17171F;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .related-logo { width: 100%; height: 100%; object-fit: contain; }
+  .related-logo-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #7C3AED;
+    background: #7C3AED15;
+  }
+  .related-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .related-name { font-size: 0.8125rem; font-weight: 600; color: #F8F8F8; }
+  .related-tagline { font-size: 0.6875rem; color: #52525B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .related-rating { font-size: 0.6875rem; font-weight: 700; color: #F59E0B; flex-shrink: 0; }
+  .related-see-all { font-size: 0.75rem; font-weight: 600; color: #7C3AED; text-decoration: none; display: block; transition: color 0.15s; }
+  .related-see-all:hover { color: #9D65F5; }
+
+  /* ── Related tools grid ─────────────────────────── */
+  .related-section {
+    margin-top: 3rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid #1F1F2E;
+  }
+  .related-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .related-all-link { font-size: 0.875rem; color: #71717A; text-decoration: none; transition: color 0.15s; }
+  .related-all-link:hover { color: #A1A1AA; }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.875rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .rg-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 1.125rem;
+    border-radius: 12px;
+    background: #111116;
+    border: 1px solid #1F1F2E;
+    text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .rg-card:hover { border-color: #7C3AED40; transform: translateY(-1px); }
+  .rg-header { display: flex; align-items: center; gap: 0.625rem; }
+  .rg-logo-wrap {
+    width: 40px; height: 40px; border-radius: 8px; border: 1px solid #1F1F2E;
+    background: #17171F; overflow: hidden; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rg-logo { width: 100%; height: 100%; object-fit: contain; }
+  .rg-logo-fallback {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: #7C3AED; background: #7C3AED15;
+  }
+  .rg-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .rg-name { font-size: 0.9375rem; font-weight: 700; color: #F8F8F8; }
+  .rg-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  .rg-badge {
+    font-size: 0.5625rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 999px; border: 1px solid;
+  }
+  .rg-free     { color: #22C55E; border-color: #22C55E30; background: #22C55E12; }
+  .rg-freemium { color: #F59E0B; border-color: #F59E0B30; background: #F59E0B12; }
+  .rg-paid     { color: #EF4444; border-color: #EF444430; background: #EF444412; }
+  .rg-india    { color: #F59E0B; border-color: #F59E0B30; background: #F59E0B12; }
+  .rg-rating { font-size: 0.75rem; font-weight: 700; color: #F59E0B; flex-shrink: 0; }
+  .rg-tagline { font-size: 0.8125rem; color: #71717A; margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ── Bottom CTA banner ──────────────────────────── */
+  .bottom-cta {
+    position: relative;
+    margin-top: 3rem;
+    padding: clamp(2rem, 5vw, 2.5rem);
+    border-radius: 20px;
+    border: 1px solid #7C3AED30;
+    background: linear-gradient(135deg, #7C3AED10 0%, #09090B 60%, #06B6D408 100%);
+    overflow: hidden;
+  }
+  .bottom-cta-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 80% at 0% 50%, #7C3AED18, transparent 70%);
+    pointer-events: none;
+  }
+  .bottom-cta-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .bottom-cta-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7C3AED;
+    margin: 0 0 0.375rem;
+  }
+  .bottom-cta-title { font-size: clamp(1.25rem, 3vw, 1.75rem); font-weight: 800; margin: 0 0 0.5rem; }
+  .bottom-cta-sub { font-size: 0.9375rem; color: #71717A; margin: 0; }
+  .bottom-cta-actions { display: flex; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap; }
+  .bottom-cta-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6875rem 1.375rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #F8F8F8;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .bottom-cta-btn-primary:hover { opacity: 0.9; }
+  .bottom-cta-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6875rem 1.375rem;
+    border-radius: 10px;
+    border: 1px solid #2D2D3E;
+    color: #A1A1AA;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .bottom-cta-btn-ghost:hover { border-color: #7C3AED40; color: #F8F8F8; }
+
+  /* ── Mobile sticky CTA ──────────────────────────── */
+  .mobile-sticky-cta {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .mobile-sticky-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      padding: 0.875rem 1rem calc(0.875rem + env(safe-area-inset-bottom));
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #1F1F2E;
+    }
+    .tool-detail { padding-bottom: 5.5rem; }
+  }
+  .mobile-sticky-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+    color: #F8F8F8;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    flex: 1;
+    justify-content: center;
+  }
+  .mobile-sticky-price { font-size: 0.75rem; color: #71717A; flex-shrink: 0; white-space: nowrap; }
+
+  /* ── Responsive ─────────────────────────────────── */
+  @media (max-width: 1023px) {
+    .body-grid { grid-template-columns: 1fr; }
+    .sidebar-col { position: static; }
+    .sidebar-cta-card { display: none; } /* hidden on mobile — sticky bar handles it */
+  }
+  @media (max-width: 767px) {
+    .hero-layout { flex-direction: column; }
+    .hero-cta-block { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+    .highlights-grid { grid-template-columns: 1fr; }
+    .pros-cons { grid-template-columns: 1fr; }
+    .india-spotlight-inner { flex-direction: column; gap: 0.75rem; }
+    .hero-stats { gap: 0; row-gap: 0.75rem; }
+    .hero-stat-sep { display: none; }
+    .hero-stat { padding-right: 1.25rem; }
+    .bottom-cta-content { flex-direction: column; align-items: flex-start; }
+    .bottom-cta-actions { width: 100%; }
+    .bottom-cta-btn-primary, .bottom-cta-btn-ghost { flex: 1; justify-content: center; }
+  }
+  @media (max-width: 480px) {
+    .highlights-grid { grid-template-columns: 1fr; }
+  }
+</style>

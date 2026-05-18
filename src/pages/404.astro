@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import { getFeaturedTools } from '@/utils/tools';
+const featured = getFeaturedTools(4);
+---
+
+<BaseLayout
+  title="Page Not Found — AI Tools"
+  description="This page doesn't exist. Browse India's best AI tools directory."
+  noIndex={true}
+>
+  <div class="not-found">
+    <div class="container-site">
+      <div class="nf-inner">
+        <div class="nf-code" aria-hidden="true">404</div>
+        <h1 class="nf-title">Page not found</h1>
+        <p class="nf-desc">
+          This page doesn't exist or was moved. Let's get you back on track.
+        </p>
+        <div class="nf-actions">
+          <a href="/tools" class="btn-primary">Browse AI Tools</a>
+          <a href="/" class="btn-ghost">Go Home</a>
+        </div>
+
+        <div class="nf-suggestions">
+          <p class="nf-suggestions-label">Popular tools</p>
+          <ul class="nf-tools" role="list">
+            {featured.map(t => (
+              <li>
+                <a href={`/tools/${t.slug}`} class="nf-tool-link">{t.name}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found { display: flex; align-items: center; justify-content: center; min-height: 60vh; padding: 4rem 0; }
+  .nf-inner { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+  .nf-code {
+    font-size: clamp(5rem, 15vw, 9rem);
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    background: linear-gradient(135deg, #2D2D3E 0%, #1F1F2E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  .nf-title { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0; }
+  .nf-desc { color: #71717A; font-size: 1rem; max-width: 36ch; line-height: 1.6; margin: 0; }
+  .nf-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
+  .nf-suggestions { margin-top: 2rem; }
+  .nf-suggestions-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #52525B; margin: 0 0 0.75rem; }
+  .nf-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; list-style: none; padding: 0; margin: 0; }
+  .nf-tool-link {
+    padding: 0.3rem 0.875rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 500;
+    border: 1px solid #1F1F2E; color: #A1A1AA; text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .nf-tool-link:hover { border-color: #7C3AED40; color: #F8F8F8; }
+</style>

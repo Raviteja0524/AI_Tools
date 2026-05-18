@@ -1,0 +1,111 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Search AI Tools, Reviews & Guides | AI Tools India"
+  description="Search across all AI tools, reviews, and guides on AI Tools India. Find the perfect AI tool for your needs."
+>
+  <div class="search-page">
+    <div class="container-site">
+      <header class="search-header">
+        <h1>Search</h1>
+        <p class="search-sub">Search across all tools, reviews, and guides.</p>
+      </header>
+
+      <!-- Pagefind search UI mounts here -->
+      <div id="search" class="search-ui"></div>
+
+      <!-- Fallback while JS loads -->
+      <noscript>
+        <p style="color: #A1A1AA; text-align: center; padding: 2rem;">
+          JavaScript is required for search.
+          <a href="/tools" style="color: #7C3AED;">Browse all tools →</a>
+        </p>
+      </noscript>
+    </div>
+  </div>
+</BaseLayout>
+
+<!-- Load Pagefind UI after build (pagefind/ dir created by `npm run search:build`) -->
+<script>
+  async function initSearch() {
+    try {
+      // @ts-ignore — pagefind is generated at build time
+      const { PagefindUI } = await import('/pagefind/pagefind-ui.js');
+      new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        resetStyles: false,
+        translations: {
+          placeholder: 'Search AI tools, reviews, guides...',
+          zero_results: 'No results for [SEARCH_TERM]',
+        },
+      });
+    } catch {
+      // pagefind index not yet built — show friendly message
+      const el = document.getElementById('search');
+      if (el) {
+        el.innerHTML = `
+          <div style="text-align:center;padding:3rem;color:#71717A;">
+            <p style="font-size:1.5rem;margin-bottom:0.5rem;">🔍</p>
+            <p>Search index is being built. Run <code style="background:#111116;padding:2px 6px;border-radius:4px;color:#A1A1AA">npm run search:build</code> after <code style="background:#111116;padding:2px 6px;border-radius:4px;color:#A1A1AA">npm run build</code>.</p>
+            <a href="/tools" style="color:#7C3AED;display:inline-block;margin-top:1rem;">Browse all tools →</a>
+          </div>
+        `;
+      }
+    }
+  }
+  initSearch();
+</script>
+
+<style>
+  .search-page { padding: 3rem 0 6rem; }
+  .search-header { margin-bottom: 2rem; }
+  .search-header h1 { margin: 0 0 0.375rem; }
+  .search-sub { color: #71717A; font-size: 0.9375rem; margin: 0; }
+
+  .search-ui {
+    max-width: 720px;
+  }
+
+  /* Pagefind UI overrides — matches site dark theme */
+  :global(.pagefind-ui) {
+    --pagefind-ui-scale: 1;
+    --pagefind-ui-primary: #7C3AED;
+    --pagefind-ui-text: #F8F8F8;
+    --pagefind-ui-background: #111116;
+    --pagefind-ui-border: #1F1F2E;
+    --pagefind-ui-tag: #17171F;
+    --pagefind-ui-border-width: 1px;
+    --pagefind-ui-border-radius: 10px;
+    --pagefind-ui-image-border-radius: 8px;
+    --pagefind-ui-font: 'Inter', system-ui, sans-serif;
+  }
+  :global(.pagefind-ui__search-input) {
+    background: #111116 !important;
+    color: #F8F8F8 !important;
+    border-color: #1F1F2E !important;
+    height: 48px !important;
+    font-size: 0.9375rem !important;
+  }
+  :global(.pagefind-ui__search-input:focus) {
+    border-color: #7C3AED60 !important;
+    box-shadow: 0 0 0 3px #7C3AED18 !important;
+  }
+  :global(.pagefind-ui__result) {
+    background: #111116 !important;
+    border-color: #1F1F2E !important;
+    border-radius: 12px !important;
+  }
+  :global(.pagefind-ui__result:hover) {
+    border-color: #7C3AED40 !important;
+  }
+  :global(.pagefind-ui__result-title) { color: #F8F8F8 !important; }
+  :global(.pagefind-ui__result-excerpt) { color: #A1A1AA !important; }
+  :global(.pagefind-ui__button) {
+    background: #7C3AED !important;
+    color: #F8F8F8 !important;
+    border: none !important;
+  }
+</style>

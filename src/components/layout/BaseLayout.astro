@@ -1,0 +1,146 @@
+---
+import Navbar from './Navbar.astro';
+import Footer from './Footer.astro';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  noIndex?: boolean;
+  schema?: object | object[];
+  canonicalUrl?: string;
+}
+
+const {
+  title,
+  description = "India's best directory of free AI tools for developers, students, and freelancers. Find the perfect AI tool with honest reviews and India-specific pricing.",
+  ogImage = '/og-default.svg',
+  ogType = 'website',
+  noIndex = false,
+  schema,
+  canonicalUrl,
+} = Astro.props;
+
+const siteUrl = 'https://bestaitools.in';
+const canonical = canonicalUrl ?? new URL(Astro.url.pathname, siteUrl).href;
+const fullTitle = title.includes('AI Tools') ? title : `${title} | AI Tools`;
+const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
+
+// Merge schemas
+const schemas = schema
+  ? (Array.isArray(schema) ? schema : [schema])
+  : [];
+
+// Always include WebSite schema on all pages
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'AI Tools',
+  description,
+  url: siteUrl,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: { '@type': 'EntryPoint', urlTemplate: `${siteUrl}/tools?q={search_term_string}` },
+    'query-input': 'required name=search_term_string',
+  },
+};
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Primary meta -->
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="AI Tools" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#09090B" />
+
+    <!-- Author / site meta -->
+    <meta name="author" content="AI Tools India" />
+    <meta name="generator" content="Astro" />
+
+    <!-- Resource hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+
+    <!-- Google Fonts — loaded as <link> (faster than CSS @import) -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+
+    <!-- Additional head content -->
+    <slot name="head" />
+
+    <!-- JSON-LD schemas -->
+    <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} />
+    {schemas.map(s => (
+      <script type="application/ld+json" set:html={JSON.stringify(s)} />
+    ))}
+  </head>
+
+  <body>
+    <!-- Skip to content (a11y) -->
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <div data-pagefind-ignore>
+      <Navbar />
+    </div>
+
+    <main id="main-content" tabindex="-1" data-pagefind-body>
+      <slot />
+    </main>
+
+    <div data-pagefind-ignore>
+      <Footer />
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: #7C3AED;
+    color: #F8F8F8;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: top 0.2s ease;
+  }
+  .skip-link:focus {
+    top: 1rem;
+  }
+</style>

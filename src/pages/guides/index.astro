@@ -1,0 +1,145 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+
+const allGuides = await getCollection('guides');
+const guides = allGuides.sort((a, b) => {
+  if (a.data.featured && !b.data.featured) return -1;
+  if (!a.data.featured && b.data.featured) return 1;
+  return new Date(b.data.datePublished).getTime() - new Date(a.data.datePublished).getTime();
+});
+
+const DIFF_CONFIG = {
+  beginner:     { label: 'Beginner',     color: '#22C55E', bg: '#22C55E15', border: '#22C55E30' },
+  intermediate: { label: 'Intermediate', color: '#F59E0B', bg: '#F59E0B15', border: '#F59E0B30' },
+  advanced:     { label: 'Advanced',     color: '#EF4444', bg: '#EF444415', border: '#EF444430' },
+};
+
+const upcomingGuides = [
+  { title: 'Best Free AI Tools for UPSC / SSC Preparation 2026', tag: 'Education' },
+  { title: 'ChatGPT vs Claude vs Gemini — Which is Best for India?', tag: 'Comparison' },
+  { title: 'How to Use AI Tools on Slow Internet (Low-Data Guide)', tag: 'Connectivity' },
+  { title: 'Free AI Coding Assistants: Complete Setup for Indian Devs', tag: 'Coding' },
+  { title: 'AI Tools for Indian Freelancers: Earn More, Work Less', tag: 'Freelancing' },
+];
+---
+
+<BaseLayout
+  title="AI Tools Guides for India 2026 — How-To & Setup Tutorials | AI Tools"
+  description="Step-by-step guides for using AI tools in India. Local LLM setup, free tool comparisons, low-data AI use, and exam prep guides for Indian students."
+>
+  <div class="content-page">
+    <div class="container-site">
+      <header class="page-header">
+        <div class="page-eyebrow">Guides</div>
+        <h1>AI Tool Guides for India</h1>
+        <p class="page-desc">
+          Step-by-step tutorials written for Indian users — setting up local LLMs, comparing free tools,
+          working on slow internet, and using AI for exams and freelancing.
+        </p>
+      </header>
+
+      {guides.length > 0 && (
+        <section class="guides-section">
+          <div class="section-label">
+            {guides.length} {guides.length === 1 ? 'guide' : 'guides'} published
+          </div>
+          <ul class="guides-grid" role="list">
+            {guides.map(guide => {
+              const diff = DIFF_CONFIG[guide.data.difficulty];
+              const dateStr = new Date(guide.data.datePublished).toLocaleDateString('en-IN', {
+                year: 'numeric', month: 'short', day: 'numeric',
+              });
+              return (
+                <li>
+                  <a href={`/guides/${guide.id}`} class="guide-card">
+                    <div class="gc-badges">
+                      <span
+                        class="gc-diff"
+                        style={`color: ${diff.color}; background: ${diff.bg}; border-color: ${diff.border}`}
+                      >
+                        {diff.label}
+                      </span>
+                      <span class="gc-time">⏱ {guide.data.timeToRead}</span>
+                      {guide.data.featured && <span class="gc-featured">Featured</span>}
+                    </div>
+                    <h2 class="gc-title">{guide.data.title}</h2>
+                    <p class="gc-desc">{guide.data.description}</p>
+                    <div class="gc-footer">
+                      <time class="gc-date" datetime={guide.data.datePublished}>{dateStr}</time>
+                      {guide.data.tags && guide.data.tags.slice(0, 3).map(tag => (
+                        <span class="gc-tag">#{tag}</span>
+                      ))}
+                    </div>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section class="upcoming-section">
+        <div class="section-label">Upcoming guides</div>
+        <ul class="upcoming-list" role="list">
+          {upcomingGuides.map(g => (
+            <li class="upcoming-item">
+              <div class="upcoming-tag">{g.tag}</div>
+              <div class="upcoming-title">{g.title}</div>
+              <div class="upcoming-eta">Coming soon</div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .content-page { padding: 3rem 0 6rem; }
+  .page-header { max-width: 600px; margin-bottom: 3rem; }
+  .page-eyebrow { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #06B6D4; margin-bottom: 0.75rem; }
+  .page-header h1 { margin: 0 0 0.875rem; }
+  .page-desc { color: #A1A1AA; font-size: 1rem; line-height: 1.65; margin: 0; }
+
+  .section-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #52525B; margin-bottom: 1rem; }
+  .guides-section { margin-bottom: 3.5rem; }
+
+  .guides-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+  @media (max-width: 480px) { .guides-grid { grid-template-columns: 1fr; } }
+
+  .guide-card {
+    display: flex; flex-direction: column; gap: 0.875rem;
+    padding: 1.375rem; border-radius: 14px;
+    border: 1px solid #1F1F2E; background: #111116;
+    text-decoration: none; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    height: 100%;
+  }
+  .guide-card:hover { border-color: #06B6D440; transform: translateY(-2px); box-shadow: 0 8px 30px #06B6D410; }
+
+  .gc-badges { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .gc-diff {
+    font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 0.2rem 0.625rem; border-radius: 100px; border: 1px solid;
+  }
+  .gc-time { font-size: 0.6875rem; color: #71717A; background: #17171F; border: 1px solid #1F1F2E; padding: 0.2rem 0.5rem; border-radius: 100px; }
+  .gc-featured { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #7C3AED; background: #7C3AED15; border: 1px solid #7C3AED30; padding: 0.15rem 0.5rem; border-radius: 100px; }
+
+  .gc-title { font-size: 1rem; font-weight: 700; color: #F8F8F8; line-height: 1.35; margin: 0; }
+  .gc-desc { font-size: 0.8125rem; color: #71717A; line-height: 1.55; margin: 0; flex: 1; }
+  .gc-footer { display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap; padding-top: 0.375rem; border-top: 1px solid #1A1A24; margin-top: auto; }
+  .gc-date { font-size: 0.6875rem; color: #52525B; }
+  .gc-tag { font-size: 0.6875rem; color: #06B6D4; }
+
+  /* Upcoming */
+  .upcoming-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+  .upcoming-item {
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 1rem; padding: 0.875rem 0; border-bottom: 1px solid #1A1A24;
+  }
+  .upcoming-item:last-child { border-bottom: none; }
+  .upcoming-tag { font-size: 0.6875rem; font-weight: 600; padding: 0.2rem 0.625rem; border-radius: 999px; background: #06B6D415; color: #06B6D4; border: 1px solid #06B6D430; white-space: nowrap; }
+  .upcoming-title { font-size: 0.875rem; color: #71717A; }
+  .upcoming-eta { font-size: 0.6875rem; color: #3F3F46; white-space: nowrap; }
+  @media (max-width: 480px) { .upcoming-item { grid-template-columns: auto 1fr; } .upcoming-eta { display: none; } }
+</style>

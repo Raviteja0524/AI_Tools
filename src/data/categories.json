@@ -1,0 +1,10 @@
+[
+  { "id": "writing-productivity", "name": "Writing & Productivity", "icon": "✍️", "color": "purple",  "description": "AI assistants for writing, editing, and getting more done." },
+  { "id": "coding-assistants",    "name": "AI Coding Assistants",   "icon": "💻", "color": "blue",    "description": "Code faster with AI pair programmers and autocomplete tools." },
+  { "id": "image-video",          "name": "Image & Video",           "icon": "🎨", "color": "pink",    "description": "Generate and edit images and videos with AI." },
+  { "id": "local-llms",           "name": "Local LLMs",              "icon": "🖥️", "color": "green",   "description": "Run powerful AI models locally on your own machine — free forever." },
+  { "id": "audio-voice",          "name": "Audio & Voice",           "icon": "🎵", "color": "orange",  "description": "AI voice generation, cloning, and transcription tools." },
+  { "id": "research-data",        "name": "Research & Data",         "icon": "📊", "color": "cyan",    "description": "AI-powered research, document analysis, and data tools." },
+  { "id": "business-marketing",   "name": "Business & Marketing",    "icon": "📈", "color": "yellow",  "description": "Grow your business with AI marketing and automation tools." },
+  { "id": "education",            "name": "Education & Learning",    "icon": "🎓", "color": "teal",    "description": "AI tools for students, exam prep, and skill building." }
+]

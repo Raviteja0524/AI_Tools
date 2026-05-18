@@ -1,0 +1,73 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import ToolsDirectory from '@/components/tools/ToolsDirectory';
+import { tools, categories } from '@/utils/tools';
+---
+
+<BaseLayout
+  title="Browse All AI Tools — India's Best AI Tools Directory 2026"
+  description="Browse 23+ curated AI tools for India. Filter by category, pricing, and features. Find free tools, India favorites, and tools that work offline."
+>
+  <div class="tools-page">
+    <div class="container-site">
+      <!-- Page header -->
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">All AI Tools</h1>
+          <p class="page-sub">{tools.length} tools curated for Indian developers, students &amp; freelancers</p>
+        </div>
+        <!-- Breadcrumb -->
+        <nav aria-label="Breadcrumb" class="page-breadcrumb">
+          <a href="/">Home</a>
+          <span aria-hidden="true">›</span>
+          <span aria-current="page">Tools</span>
+        </nav>
+      </header>
+
+      <!-- Interactive directory island -->
+      <ToolsDirectory
+        tools={tools}
+        categories={categories}
+        client:load
+      />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tools-page {
+    padding: 2.5rem 0 5rem;
+  }
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+  }
+  .page-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin: 0 0 0.25rem;
+  }
+  .page-sub {
+    color: #71717A;
+    font-size: 0.9375rem;
+    margin: 0;
+  }
+  .page-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #52525B;
+    white-space: nowrap;
+    padding-top: 0.5rem;
+  }
+  .page-breadcrumb a {
+    color: #71717A;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .page-breadcrumb a:hover { color: #A1A1AA; }
+</style>

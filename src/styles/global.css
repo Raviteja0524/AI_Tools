@@ -1,0 +1,250 @@
+/* Fonts loaded via <link> in BaseLayout for better render performance */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties ─────────────────────────────── */
+:root {
+  --bg-base:      #09090B;
+  --bg-surface:   #111116;
+  --bg-elevated:  #17171F;
+  --border-subtle: #1F1F2E;
+  --border-strong: #2D2D3E;
+  --purple:       #7C3AED;
+  --purple-glow:  #7C3AED40;
+  --cyan:         #06B6D4;
+  --cyan-glow:    #06B6D440;
+  --text-primary: #F8F8F8;
+  --text-muted:   #A1A1AA;
+  --text-faint:   #52525B;
+  --success:      #22C55E;
+  --warning:      #F59E0B;
+  --danger:       #EF4444;
+
+  /* Scrollbar */
+  --scrollbar-track: #09090B;
+  --scrollbar-thumb: #2D2D3E;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100dvh;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; }
+  h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+  h3 { font-size: clamp(1.125rem, 2vw, 1.5rem); }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+  /* Selection */
+  ::selection {
+    background: #7C3AED50;
+    color: var(--text-primary);
+  }
+}
+
+/* ─── Component Utilities ────────────────────────────────── */
+@layer components {
+  /* Glassmorphism card */
+  .card {
+    @apply bg-bg-surface border border-border-subtle rounded-xl;
+    background: linear-gradient(135deg, #17171F 0%, #111116 100%);
+    box-shadow: 0 4px 24px #00000060;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card:hover {
+    @apply border-primary/30;
+    box-shadow: 0 8px 40px #00000080, 0 0 0 1px #7C3AED20;
+    transform: translateY(-1px);
+  }
+
+  /* Purple gradient button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm;
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    color: #F8F8F8;
+    transition: opacity 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 20px #7C3AED30;
+  }
+  .btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px #7C3AED50;
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm border border-border-subtle text-text-muted;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .btn-ghost:hover {
+    @apply border-primary/50 text-text-primary;
+    background: #7C3AED10;
+  }
+
+  /* Neon text */
+  .text-gradient {
+    background: linear-gradient(135deg, #9D65F5 0%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-purple {
+    background: linear-gradient(135deg, #C4B5FD 0%, #7C3AED 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Badge base */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-free {
+    @apply badge;
+    background: #22C55E15;
+    color: #22C55E;
+    border: 1px solid #22C55E30;
+  }
+  .badge-freemium {
+    @apply badge;
+    background: #F59E0B15;
+    color: #F59E0B;
+    border: 1px solid #F59E0B30;
+  }
+  .badge-paid {
+    @apply badge;
+    background: #EF444415;
+    color: #EF4444;
+    border: 1px solid #EF444430;
+  }
+  .badge-india {
+    @apply badge;
+    background: linear-gradient(135deg, #FF671F20, #046A3820);
+    color: #F59E0B;
+    border: 1px solid #F59E0B30;
+  }
+  .badge-new {
+    @apply badge;
+    background: #7C3AED20;
+    color: #C4B5FD;
+    border: 1px solid #7C3AED40;
+  }
+
+  /* Container */
+  .container-site {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1280px;
+  }
+
+  /* Section spacing */
+  .section {
+    @apply py-16 md:py-24;
+  }
+
+  /* Input field */
+  .input {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm bg-bg-elevated border border-border-subtle text-text-primary placeholder:text-text-faint;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .input:focus {
+    @apply border-primary/60;
+    box-shadow: 0 0 0 3px #7C3AED20;
+  }
+
+  /* Glow divider */
+  .divider-glow {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #7C3AED50 50%, transparent 100%);
+    border: none;
+  }
+}
+
+/* ─── Animations ─────────────────────────────────────────── */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.5s ease forwards;
+  }
+
+  /* Staggered reveal helpers */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+/* ─── Noise grain overlay (subtle texture) ───────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}

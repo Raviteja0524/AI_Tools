@@ -1,0 +1,59 @@
+---
+// Inline tool card for use inside MDX — pulls live data from tools.json
+import { getToolBySlug } from '@/utils/tools';
+interface Props { slug: string; }
+const { slug } = Astro.props;
+const tool = getToolBySlug(slug);
+if (!tool) return;
+
+const PRICING_COLOR = { free: '#22C55E', freemium: '#F59E0B', paid: '#EF4444' };
+const color = PRICING_COLOR[tool.pricing];
+---
+
+<a href={`/tools/${tool.slug}`} class="tool-mention">
+  <div class="tm-logo-wrap">
+    <img src={tool.logo} alt="" width="28" height="28" class="tm-logo"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+    <div class="tm-fallback" aria-hidden="true">{tool.name.charAt(0)}</div>
+  </div>
+  <div class="tm-info">
+    <span class="tm-name">{tool.name}</span>
+    <span class="tm-tagline">{tool.tagline}</span>
+  </div>
+  <div class="tm-right">
+    <span class="tm-rating">{tool.rating}★</span>
+    <span class="tm-pricing" style={`color: ${color}`}>{tool.pricing}</span>
+  </div>
+</a>
+
+<style>
+  .tool-mention {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border-radius: 12px;
+    border: 1px solid #1F1F2E;
+    background: #111116;
+    text-decoration: none;
+    margin: 1.25rem 0;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .tool-mention:hover { border-color: #7C3AED40; transform: translateY(-1px); }
+  .tm-logo-wrap {
+    width: 40px; height: 40px; border-radius: 8px; border: 1px solid #1F1F2E;
+    background: #17171F; overflow: hidden; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tm-logo { width: 100%; height: 100%; object-fit: contain; }
+  .tm-fallback {
+    width: 100%; height: 100%; display: none; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: #7C3AED; background: #7C3AED15;
+  }
+  .tm-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .tm-name { font-size: 0.9375rem; font-weight: 700; color: #F8F8F8; }
+  .tm-tagline { font-size: 0.75rem; color: #71717A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tm-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; flex-shrink: 0; }
+  .tm-rating { font-size: 0.75rem; font-weight: 700; color: #F59E0B; }
+  .tm-pricing { font-size: 0.625rem; font-weight: 700; text-transform: capitalize; }
+</style>

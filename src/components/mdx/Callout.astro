@@ -1,0 +1,58 @@
+---
+interface Props {
+  type?: 'tip' | 'warning' | 'info' | 'india';
+  title?: string;
+}
+const { type = 'info', title } = Astro.props;
+
+const config = {
+  tip:     { icon: '💡', label: title ?? 'Tip',             accent: '#22C55E', bg: '#22C55E0D', border: '#22C55E25' },
+  warning: { icon: '⚠️',  label: title ?? 'Watch out',      accent: '#F59E0B', bg: '#F59E0B0D', border: '#F59E0B25' },
+  info:    { icon: 'ℹ️',  label: title ?? 'Note',           accent: '#06B6D4', bg: '#06B6D40D', border: '#06B6D425' },
+  india:   { icon: '🇮🇳', label: title ?? 'India context',  accent: '#F59E0B', bg: '#F59E0B08', border: '#F59E0B25' },
+};
+const c = config[type];
+---
+
+<aside
+  class="callout"
+  style={`background: ${c.bg}; border-color: ${c.border};`}
+  role={type === 'warning' ? 'alert' : 'note'}
+>
+  <div class="callout-header" style={`color: ${c.accent}`}>
+    <span class="callout-icon" aria-hidden="true">{c.icon}</span>
+    <span class="callout-label">{c.label}</span>
+  </div>
+  <div class="callout-body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .callout {
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .callout-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.625rem;
+  }
+  .callout-icon { font-size: 1rem; line-height: 1; }
+  .callout-body {
+    font-size: 0.9rem;
+    color: #A1A1AA;
+    line-height: 1.65;
+  }
+  .callout-body :global(p) { margin: 0; }
+  .callout-body :global(p + p) { margin-top: 0.5rem; }
+  .callout-body :global(a) { color: #7C3AED; }
+  .callout-body :global(strong) { color: #F8F8F8; font-weight: 600; }
+</style>

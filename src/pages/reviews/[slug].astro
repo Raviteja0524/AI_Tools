@@ -1,0 +1,475 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import { getToolBySlug } from '@/utils/tools';
+
+export async function getStaticPaths() {
+  const reviews = await getCollection('reviews');
+  return reviews.map(review => ({
+    params: { slug: review.id },
+    props: { review },
+  }));
+}
+
+const { review } = Astro.props;
+const { Content } = await render(review);
+const tool = getToolBySlug(review.data.toolSlug);
+
+const PRICING_COLOR: Record<string, string> = {
+  free: '#22C55E',
+  freemium: '#F59E0B',
+  paid: '#EF4444',
+};
+const pricingColor = PRICING_COLOR[review.data.pricingTier] ?? '#A1A1AA';
+
+const ratingFull = Math.floor(review.data.rating);
+const ratingHalf = review.data.rating - ratingFull >= 0.5;
+
+const dateFormatted = new Date(review.data.datePublished).toLocaleDateString('en-IN', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+
+const ctaUrl = tool?.affiliateUrl ?? tool?.url ?? '#';
+const ctaLabel = review.data.pricingTier === 'free'
+  ? `Try ${review.data.toolName} Free →`
+  : review.data.pricingTier === 'freemium'
+    ? `Try ${review.data.toolName} for Free →`
+    : `Visit ${review.data.toolName} →`;
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Review',
+  headline: review.data.title,
+  description: review.data.description,
+  datePublished: review.data.datePublished,
+  dateModified: review.data.dateModified ?? review.data.datePublished,
+  author: { '@type': 'Organization', name: review.data.author ?? 'AI Tools India' },
+  publisher: {
+    '@type': 'Organization',
+    name: 'AI Tools India',
+    url: 'https://bestaitools.in',
+    logo: { '@type': 'ImageObject', url: 'https://bestaitools.in/favicon.svg' },
+  },
+  reviewRating: {
+    '@type': 'Rating',
+    ratingValue: review.data.rating,
+    bestRating: 5,
+    worstRating: 0,
+  },
+  itemReviewed: {
+    '@type': 'SoftwareApplication',
+    name: review.data.toolName,
+    applicationCategory: 'AI Tool',
+  },
+  mainEntityOfPage: `https://bestaitools.in/reviews/${review.id}`,
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://bestaitools.in' },
+    { '@type': 'ListItem', position: 2, name: 'Reviews', item: 'https://bestaitools.in/reviews' },
+    { '@type': 'ListItem', position: 3, name: review.data.title, item: `https://bestaitools.in/reviews/${review.id}` },
+  ],
+};
+---
+
+<BaseLayout
+  title={review.data.title}
+  description={review.data.description}
+  schema={[articleSchema, breadcrumbSchema]}
+  canonicalUrl={`https://bestaitools.in/reviews/${review.id}`}
+>
+  <div class="review-page">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb container-site" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span aria-hidden="true">›</span>
+      <a href="/reviews">Reviews</a>
+      <span aria-hidden="true">›</span>
+      <span aria-current="page">{review.data.toolName} Review</span>
+    </nav>
+
+    <!-- Review Hero -->
+    <header class="review-hero">
+      <div class="container-site">
+        <div class="hero-inner">
+          <!-- Tool Logo -->
+          {tool && (
+            <div class="hero-logo-wrap">
+              <img
+                src={tool.logo}
+                alt={tool.name}
+                width="72"
+                height="72"
+                class="hero-logo"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+              />
+              <div class="hero-logo-fallback" aria-hidden="true">{tool.name.charAt(0)}</div>
+            </div>
+          )}
+          <div class="hero-meta">
+            <div class="hero-eyebrow">
+              <span class="eyebrow-label">Review</span>
+              {review.data.featured && <span class="badge-featured">Featured</span>}
+            </div>
+            <h1 class="hero-title">{review.data.title}</h1>
+            <div class="hero-verdict">"{review.data.verdict}"</div>
+            <div class="hero-stats">
+              <!-- Rating -->
+              <div class="rating-display" title={`${review.data.rating} out of 5`}>
+                <div class="stars" aria-hidden="true">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <span class={`star ${i < ratingFull ? 'star-full' : i === ratingFull && ratingHalf ? 'star-half' : 'star-empty'}`}>★</span>
+                  ))}
+                </div>
+                <span class="rating-num">{review.data.rating}<span class="rating-max">/5</span></span>
+              </div>
+              <!-- Pricing -->
+              <span class="pricing-tag" style={`color: ${pricingColor}; border-color: ${pricingColor}30; background: ${pricingColor}10`}>
+                {review.data.pricingTier}
+              </span>
+              {review.data.indianPricing && (
+                <span class="inr-tag">🇮🇳 {review.data.indianPricing}</span>
+              )}
+            </div>
+            <div class="hero-byline">
+              <span>By {review.data.author ?? 'AI Tools India'}</span>
+              <span class="byline-dot" aria-hidden="true">·</span>
+              <time datetime={review.data.datePublished}>{dateFormatted}</time>
+              {review.data.tags && review.data.tags.length > 0 && (
+                <>
+                  <span class="byline-dot" aria-hidden="true">·</span>
+                  <div class="tag-list" role="list">
+                    {review.data.tags.map(tag => (
+                      <span class="tag-chip" role="listitem">#{tag}</span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="review-body container-site">
+      <div class="review-layout">
+        <!-- Main content -->
+        <main class="review-main prose-content" data-pagefind-body>
+          <Content />
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="review-sidebar">
+          <!-- CTA Card -->
+          <div class="sidebar-cta">
+            {tool && (
+              <div class="cta-tool-row">
+                <div class="cta-logo-wrap">
+                  <img src={tool.logo} alt="" width="32" height="32" class="cta-logo"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                  <div class="cta-logo-fallback" aria-hidden="true">{tool.name.charAt(0)}</div>
+                </div>
+                <div>
+                  <div class="cta-tool-name">{tool.name}</div>
+                  <div class="cta-tool-tagline">{tool.tagline}</div>
+                </div>
+              </div>
+            )}
+            <div class="cta-rating-row">
+              <div class="cta-stars" aria-hidden="true">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <span class={i < ratingFull ? 'cta-star-full' : 'cta-star-empty'}>★</span>
+                ))}
+              </div>
+              <span class="cta-rating-val">{review.data.rating}/5</span>
+            </div>
+            <a
+              href={ctaUrl}
+              class="cta-btn"
+              target="_blank"
+              rel={tool?.affiliateUrl ? 'nofollow sponsored noopener' : 'noopener noreferrer'}
+            >
+              {ctaLabel}
+            </a>
+            {tool?.affiliateUrl && (
+              <p class="cta-disclosure">Affiliate link — we may earn a commission</p>
+            )}
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="sidebar-card">
+            <div class="sidebar-card-title">Quick Info</div>
+            <dl class="quick-info">
+              <div class="qi-row">
+                <dt>Pricing</dt>
+                <dd style={`color: ${pricingColor}`}>{review.data.pricingTier}</dd>
+              </div>
+              {review.data.indianPricing && (
+                <div class="qi-row">
+                  <dt>India pricing</dt>
+                  <dd>{review.data.indianPricing}</dd>
+                </div>
+              )}
+              {tool && (
+                <>
+                  <div class="qi-row">
+                    <dt>Category</dt>
+                    <dd>{tool.category.replace(/-/g, ' ')}</dd>
+                  </div>
+                  {tool.bestForIndia && (
+                    <div class="qi-row">
+                      <dt>India pick</dt>
+                      <dd>🇮🇳 Recommended</dd>
+                    </div>
+                  )}
+                  {tool.freeForever && (
+                    <div class="qi-row">
+                      <dt>Free forever</dt>
+                      <dd style="color: #22C55E">✓ Yes</dd>
+                    </div>
+                  )}
+                </>
+              )}
+              <div class="qi-row">
+                <dt>Our rating</dt>
+                <dd class="qi-rating">{review.data.rating}<span>/5</span></dd>
+              </div>
+              <div class="qi-row">
+                <dt>Reviewed</dt>
+                <dd><time datetime={review.data.datePublished}>{dateFormatted}</time></dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Tool page link -->
+          {tool && (
+            <a href={`/tools/${tool.slug}`} class="sidebar-tool-link">
+              View {tool.name} in directory →
+            </a>
+          )}
+
+          <!-- Back to reviews -->
+          <a href="/reviews" class="sidebar-back">← All Reviews</a>
+        </aside>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .review-page { padding-bottom: 6rem; }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 1.25rem 1rem; font-size: 0.75rem; color: #52525B;
+  }
+  .breadcrumb a { color: #71717A; text-decoration: none; transition: color 0.15s; }
+  .breadcrumb a:hover { color: #A1A1AA; }
+  .breadcrumb span[aria-current] { color: #A1A1AA; }
+
+  /* Hero */
+  .review-hero {
+    border-bottom: 1px solid #1F1F2E;
+    background: linear-gradient(180deg, #0D0D14 0%, #09090B 100%);
+    padding: 3rem 0 2.5rem;
+    margin-bottom: 3rem;
+  }
+  .hero-inner { display: flex; gap: 2rem; align-items: flex-start; }
+  .hero-logo-wrap {
+    width: 88px; height: 88px; border-radius: 18px; border: 1px solid #2D2D3E;
+    background: #111116; overflow: hidden; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero-logo { width: 100%; height: 100%; object-fit: contain; }
+  .hero-logo-fallback {
+    width: 100%; height: 100%; display: none; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #7C3AED; background: #7C3AED15;
+  }
+  .hero-meta { flex: 1; min-width: 0; }
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;
+  }
+  .eyebrow-label {
+    font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #7C3AED;
+  }
+  .badge-featured {
+    font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 0.15rem 0.5rem; border-radius: 100px;
+    background: #7C3AED20; color: #7C3AED; border: 1px solid #7C3AED40;
+  }
+  .hero-title { margin: 0 0 0.75rem; font-size: clamp(1.375rem, 3vw, 1.875rem); line-height: 1.25; }
+  .hero-verdict {
+    font-size: 0.9375rem; color: #71717A; font-style: italic;
+    margin-bottom: 1rem; line-height: 1.5;
+  }
+  .hero-stats { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; margin-bottom: 0.875rem; }
+  .rating-display { display: flex; align-items: center; gap: 0.5rem; }
+  .stars { display: flex; gap: 0.1rem; }
+  .star { font-size: 1rem; }
+  .star-full { color: #F59E0B; }
+  .star-half { color: #F59E0B; opacity: 0.6; }
+  .star-empty { color: #3F3F46; }
+  .rating-num { font-size: 1rem; font-weight: 700; color: #F8F8F8; }
+  .rating-max { color: #52525B; font-size: 0.8125rem; font-weight: 400; }
+  .pricing-tag {
+    font-size: 0.6875rem; font-weight: 700; text-transform: capitalize;
+    padding: 0.2rem 0.625rem; border-radius: 100px; border: 1px solid;
+  }
+  .inr-tag { font-size: 0.75rem; color: #A1A1AA; }
+  .hero-byline {
+    display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
+    font-size: 0.75rem; color: #52525B;
+  }
+  .byline-dot { color: #3F3F46; }
+  .tag-list { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+  .tag-chip { color: #7C3AED; font-size: 0.6875rem; }
+
+  /* Layout */
+  .review-body { padding: 0 1rem; }
+  .review-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 3rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .review-layout { grid-template-columns: 1fr; }
+    .review-sidebar { order: -1; }
+  }
+
+  /* Prose */
+  .prose-content {
+    color: #A1A1AA;
+    line-height: 1.75;
+    font-size: 0.9375rem;
+  }
+  .prose-content :global(h2) {
+    font-size: 1.375rem; font-weight: 700; color: #F8F8F8;
+    margin: 2.5rem 0 1rem; padding-top: 0.5rem;
+    border-top: 1px solid #1F1F2E;
+  }
+  .prose-content :global(h3) {
+    font-size: 1.0625rem; font-weight: 700; color: #F8F8F8;
+    margin: 2rem 0 0.75rem;
+  }
+  .prose-content :global(h4) {
+    font-size: 0.9375rem; font-weight: 700; color: #E4E4E7;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .prose-content :global(p) { margin: 0 0 1.125rem; }
+  .prose-content :global(a) { color: #7C3AED; text-decoration: underline; text-underline-offset: 3px; }
+  .prose-content :global(a:hover) { color: #9D5CF0; }
+  .prose-content :global(strong) { color: #F8F8F8; font-weight: 600; }
+  .prose-content :global(code) {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem; background: #111116; color: #06B6D4;
+    padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid #1F1F2E;
+  }
+  .prose-content :global(pre) {
+    background: #0D0D14; border: 1px solid #1F1F2E; border-radius: 10px;
+    padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.5rem 0;
+  }
+  .prose-content :global(pre code) {
+    background: none; border: none; padding: 0; color: #E4E4E7;
+    font-size: 0.8125rem; line-height: 1.7;
+  }
+  .prose-content :global(ul), .prose-content :global(ol) {
+    padding-left: 1.5rem; margin: 0 0 1.125rem;
+  }
+  .prose-content :global(li) { margin-bottom: 0.375rem; }
+  .prose-content :global(table) {
+    width: 100%; border-collapse: collapse; margin: 1.5rem 0;
+    font-size: 0.875rem;
+  }
+  .prose-content :global(th) {
+    background: #111116; color: #E4E4E7; font-weight: 600; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 0.625rem 0.875rem; border: 1px solid #1F1F2E; text-align: left;
+  }
+  .prose-content :global(td) {
+    padding: 0.625rem 0.875rem; border: 1px solid #1F1F2E; color: #A1A1AA;
+    vertical-align: top;
+  }
+  .prose-content :global(tr:hover td) { background: #111116; }
+  .prose-content :global(blockquote) {
+    border-left: 3px solid #7C3AED; margin: 1.5rem 0;
+    padding: 0.875rem 1.25rem; background: #7C3AED08; border-radius: 0 8px 8px 0;
+  }
+  .prose-content :global(hr) {
+    border: none; border-top: 1px solid #1F1F2E; margin: 2.5rem 0;
+  }
+
+  /* Sidebar */
+  .review-sidebar {
+    position: sticky; top: 5rem;
+    display: flex; flex-direction: column; gap: 1rem;
+  }
+  .sidebar-cta {
+    padding: 1.25rem; border-radius: 14px;
+    border: 1px solid #7C3AED40; background: linear-gradient(135deg, #0D0A1A, #111116);
+  }
+  .cta-tool-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.875rem; }
+  .cta-logo-wrap {
+    width: 40px; height: 40px; border-radius: 8px; border: 1px solid #2D2D3E;
+    background: #17171F; overflow: hidden; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cta-logo { width: 100%; height: 100%; object-fit: contain; }
+  .cta-logo-fallback {
+    width: 100%; height: 100%; display: none; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: #7C3AED; background: #7C3AED15;
+  }
+  .cta-tool-name { font-size: 0.9375rem; font-weight: 700; color: #F8F8F8; }
+  .cta-tool-tagline { font-size: 0.6875rem; color: #71717A; }
+  .cta-rating-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+  .cta-stars { display: flex; gap: 0.1rem; }
+  .cta-star-full { color: #F59E0B; font-size: 0.875rem; }
+  .cta-star-empty { color: #3F3F46; font-size: 0.875rem; }
+  .cta-rating-val { font-size: 0.75rem; font-weight: 700; color: #F59E0B; }
+  .cta-btn {
+    display: block; width: 100%; padding: 0.75rem 1rem;
+    background: #7C3AED; color: #fff; text-align: center;
+    border-radius: 10px; font-weight: 700; font-size: 0.875rem;
+    text-decoration: none; transition: background 0.15s, transform 0.1s;
+  }
+  .cta-btn:hover { background: #6D28D9; transform: translateY(-1px); }
+  .cta-disclosure { font-size: 0.625rem; color: #52525B; text-align: center; margin: 0.5rem 0 0; }
+
+  .sidebar-card {
+    padding: 1.125rem; border-radius: 12px; border: 1px solid #1F1F2E; background: #111116;
+  }
+  .sidebar-card-title {
+    font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.07em; color: #52525B; margin-bottom: 0.875rem;
+  }
+  .quick-info { display: flex; flex-direction: column; gap: 0; margin: 0; }
+  .qi-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0.5rem 0; border-bottom: 1px solid #1A1A24; font-size: 0.8125rem;
+  }
+  .qi-row:last-child { border-bottom: none; }
+  .qi-row dt { color: #52525B; }
+  .qi-row dd { color: #A1A1AA; margin: 0; text-align: right; max-width: 60%; text-transform: capitalize; }
+  .qi-rating { color: #F59E0B; font-weight: 700; }
+  .qi-rating span { color: #52525B; font-weight: 400; }
+
+  .sidebar-tool-link {
+    display: block; padding: 0.625rem 1rem; border-radius: 8px;
+    border: 1px solid #1F1F2E; background: #111116;
+    font-size: 0.8125rem; color: #7C3AED; text-decoration: none; text-align: center;
+    transition: border-color 0.15s;
+  }
+  .sidebar-tool-link:hover { border-color: #7C3AED40; }
+  .sidebar-back {
+    display: block; font-size: 0.75rem; color: #52525B; text-decoration: none;
+    text-align: center; padding: 0.375rem;
+    transition: color 0.15s;
+  }
+  .sidebar-back:hover { color: #A1A1AA; }
+</style>
