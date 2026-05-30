@@ -21,7 +21,7 @@ CREATE TABLE tools (
   tags           TEXT[]        NOT NULL DEFAULT '{}',
   pricing        TEXT          NOT NULL CHECK (pricing IN ('free','freemium','paid')),
   indian_pricing TEXT,
-  rating         NUMERIC(2,1)  NOT NULL,
+  rating         NUMERIC(2,1)  NOT NULL CHECK (rating >= 0.0 AND rating <= 5.0),
   review_count   INTEGER,
   best_for_india BOOLEAN       NOT NULL DEFAULT false,
   free_forever   BOOLEAN       NOT NULL DEFAULT false,
