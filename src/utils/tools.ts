@@ -58,6 +58,16 @@ function mapTool(row: Record<string, unknown>): Tool {
   };
 }
 
+function mapCategory(row: Record<string, unknown>): Category {
+  return {
+    id:          row.id          as string,
+    name:        row.name        as string,
+    icon:        row.icon        as string,
+    color:       row.color       as string,
+    description: row.description as string,
+  };
+}
+
 // Fetched once when module is first imported during the Astro build.
 const { data: rawTools, error: toolsError } = await supabase
   .from('tools')
@@ -75,7 +85,7 @@ const { data: rawCategories, error: categoriesError } = await supabase
 if (categoriesError) throw new Error(`Supabase categories fetch failed: ${categoriesError.message}`);
 
 export const tools: Tool[]          = (rawTools      ?? []).map(mapTool);
-export const categories: Category[] = (rawCategories ?? []) as Category[];
+export const categories: Category[] = (rawCategories ?? []).map(mapCategory);
 
 export function getToolBySlug(slug: string): Tool | undefined {
   return tools.find(t => t.slug === slug);
