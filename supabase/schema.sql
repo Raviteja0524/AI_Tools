@@ -58,8 +58,10 @@ CREATE TRIGGER tools_updated_at
 ALTER TABLE tools      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Public read on tools"
+DROP POLICY IF EXISTS "Public read on tools" ON tools;
+CREATE POLICY "Public read on tools"
   ON tools FOR SELECT USING (true);
 
-CREATE POLICY IF NOT EXISTS "Public read on categories"
+DROP POLICY IF EXISTS "Public read on categories" ON categories;
+CREATE POLICY "Public read on categories"
   ON categories FOR SELECT USING (true);
