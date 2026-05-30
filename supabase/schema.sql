@@ -1,5 +1,5 @@
 -- Categories table
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,
   icon        TEXT NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE categories (
 );
 
 -- Tools table
-CREATE TABLE tools (
+CREATE TABLE IF NOT EXISTS tools (
   id             TEXT          PRIMARY KEY,
   name           TEXT          NOT NULL,
   slug           TEXT          NOT NULL UNIQUE,
@@ -49,6 +49,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS tools_updated_at ON tools;
 CREATE TRIGGER tools_updated_at
   BEFORE UPDATE ON tools
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
@@ -57,8 +58,8 @@ CREATE TRIGGER tools_updated_at
 ALTER TABLE tools      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public read on tools"
+CREATE POLICY IF NOT EXISTS "Public read on tools"
   ON tools FOR SELECT USING (true);
 
-CREATE POLICY "Public read on categories"
+CREATE POLICY IF NOT EXISTS "Public read on categories"
   ON categories FOR SELECT USING (true);
