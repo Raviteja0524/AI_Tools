@@ -11,6 +11,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from urllib.parse import urlparse
 
+import google.generativeai as genai
 import requests
 import yaml
 from supabase import create_client
@@ -27,6 +28,56 @@ DOMAIN_BLOCKLIST = frozenset({
 
 MAX_CANDIDATES = 15
 MAX_NEW_TOOLS = 10
+
+GEMINI_SYSTEM = (
+    "You are an AI tool curator. Given a URL, page excerpt, and search snippet, "
+    "determine if this is a real standalone AI-powered tool (not a blog post, "
+    "listicle, or company homepage for a non-AI business). If it is, extract "
+    "structured data. Return JSON only. No explanation."
+)
+
+GEMINI_PROMPT_TEMPLATE = """\
+Tool URL: {url}
+Tool name from search: {title}
+Search snippet: {snippet}
+Page excerpt (first 3000 chars):
+{page_text}
+
+Available category IDs:
+- writing-productivity
+- coding-assistants
+- image-video
+- local-llms
+- audio-voice
+- research-data
+- business-marketing
+- education
+
+Return this exact JSON (no markdown, no code blocks):
+{{
+  "is_ai_tool": true,
+  "name": "Tool Name",
+  "slug": "tool-name",
+  "tagline": "One line tagline under 80 chars",
+  "description": "2-3 sentences describing what it does and who it is for.",
+  "url": "https://official-url.com",
+  "category": "one-of-8-ids-above",
+  "tags": ["tag1", "tag2", "tag3"],
+  "pricing": "free",
+  "indian_pricing": null,
+  "rating": 3.8,
+  "best_for_india": false,
+  "free_forever": false,
+  "pros": ["Pro one", "Pro two", "Pro three"],
+  "cons": ["Con one", "Con two"],
+  "logo_domain": "officialdomain.com"
+}}
+
+If NOT a standalone AI tool, return:
+{{"is_ai_tool": false, "skip_reason": "brief reason"}}
+
+Rating guidance: 3.5-4.2. Default 3.8. Use 4.0+ only if generous free tier or strong adoption evidence.
+"""
 
 
 def extract_domain(url: str) -> str:
@@ -114,3 +165,190 @@ def parse_gemini_response(text: str) -> Optional[dict]:
     except json.JSONDecodeError:
         log.warning("Failed to parse Gemini JSON: %r", text[:200])
         return None
+
+
+def search_brave(query: str, api_key: str) -> list[dict]:
+    """Query Brave Search API. Returns list of {title, url, description} dicts."""
+    resp = requests.get(
+        "https://api.search.brave.com/res/v1/web/search",
+        headers={"Accept": "application/json", "X-Subscription-Token": api_key},
+        params={"q": query, "count": 10, "text_decorations": False},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    results = resp.json().get("web", {}).get("results", [])
+    return [
+        {
+            "title": r.get("title", ""),
+            "url": r.get("url", ""),
+            "description": r.get("description", ""),
+        }
+        for r in results
+    ]
+
+
+def evaluate_with_gemini(candidate: dict, model) -> Optional[dict]:
+    """
+    Send a candidate to Gemini. Returns parsed tool dict or None if not an AI tool.
+    """
+    page_text = fetch_page_text(candidate["url"])
+    prompt = GEMINI_PROMPT_TEMPLATE.format(
+        url=candidate["url"],
+        title=candidate["title"],
+        snippet=candidate["description"],
+        page_text=page_text or "(page unavailable)",
+    )
+    try:
+        response = model.generate_content(prompt)
+        parsed = parse_gemini_response(response.text)
+        if parsed is None or not parsed.get("is_ai_tool"):
+            reason = parsed.get("skip_reason") if parsed else "parse error"
+            log.info("Skip %s: %s", candidate["url"], reason)
+            return None
+        return parsed
+    except Exception as exc:
+        log.warning("Gemini error for %s: %s", candidate["url"], exc)
+        return None
+
+
+def write_tool_to_supabase(client, tool_data: dict) -> bool:
+    """Upsert a single tool row. Returns True on success."""
+    logo_domain = tool_data.pop("logo_domain", None) or extract_domain(tool_data.get("url", ""))
+    row = {
+        "id": tool_data["slug"],
+        "name": tool_data["name"],
+        "slug": tool_data["slug"],
+        "tagline": tool_data.get("tagline", ""),
+        "description": tool_data.get("description", ""),
+        "logo": f"https://logo.clearbit.com/{logo_domain}" if logo_domain else "",
+        "url": tool_data["url"],
+        "affiliate_url": None,
+        "category": tool_data.get("category", "writing-productivity"),
+        "tags": tool_data.get("tags", []),
+        "pricing": tool_data.get("pricing", "freemium"),
+        "indian_pricing": tool_data.get("indian_pricing"),
+        "rating": float(tool_data.get("rating", 3.8)),
+        "review_count": None,
+        "best_for_india": bool(tool_data.get("best_for_india", False)),
+        "free_forever": bool(tool_data.get("free_forever", False)),
+        "featured": False,
+        "languages": [],
+        "pros": tool_data.get("pros", []),
+        "cons": tool_data.get("cons", []),
+        "date_added": date.today().isoformat(),
+        "is_active": True,
+        "source": "agent",
+        "last_synced_at": datetime.now(timezone.utc).isoformat(),
+        "needs_review": False,
+        "agent_notes": None,
+    }
+    try:
+        client.table("tools").upsert(row, on_conflict="slug").execute()
+        log.info("Upserted: %s (%s)", row["name"], row["slug"])
+        return True
+    except Exception as exc:
+        log.error("Supabase write failed for %s: %s", row["slug"], exc)
+        return False
+
+
+def trigger_vercel_rebuild(webhook_url: str) -> None:
+    """POST to the Vercel deploy webhook to trigger a site rebuild."""
+    try:
+        requests.post(webhook_url, timeout=10)
+        log.info("Triggered Vercel rebuild")
+    except Exception as exc:
+        log.warning("Vercel webhook failed: %s", exc)
+
+
+def run_discovery(
+    queries: list[str],
+    brave_key: str,
+    gemini_model,
+    supabase_client,
+    webhook_url: str,
+) -> int:
+    """Full pipeline. Returns count of new tools added."""
+    # Load existing tools for deduplication
+    existing = supabase_client.table("tools").select("url,name").execute()
+    existing_domains = {extract_domain(r["url"]) for r in existing.data}
+    existing_names = [r["name"] for r in existing.data]
+
+    # Search
+    raw: list[dict] = []
+    for query in queries:
+        try:
+            raw.extend(search_brave(query, brave_key))
+        except Exception as exc:
+            log.warning("Brave search failed %r: %s", query, exc)
+        time.sleep(1)
+
+    # Deduplicate and filter
+    seen: set[str] = set()
+    candidates: list[dict] = []
+    for c in raw:
+        domain = extract_domain(c["url"])
+        if (
+            not domain
+            or is_blocked_domain(c["url"])
+            or domain in existing_domains
+            or domain in seen
+            or is_name_similar(c["title"], existing_names)
+        ):
+            continue
+        seen.add(domain)
+        candidates.append(c)
+        if len(candidates) >= MAX_CANDIDATES:
+            break
+
+    log.info("%d raw → %d candidates", len(raw), len(candidates))
+
+    # Evaluate and write
+    new_count = 0
+    for candidate in candidates:
+        if new_count >= MAX_NEW_TOOLS:
+            break
+        tool_data = evaluate_with_gemini(candidate, gemini_model)
+        if tool_data and write_tool_to_supabase(supabase_client, tool_data):
+            new_count += 1
+        time.sleep(4)
+
+    log.info("Added %d new tools", new_count)
+
+    if new_count > 0:
+        trigger_vercel_rebuild(webhook_url)
+    else:
+        log.info("No new tools — skipping rebuild")
+
+    return new_count
+
+
+def main() -> None:
+    queries_path = os.path.join(os.path.dirname(__file__), "queries.yaml")
+    with open(queries_path) as f:
+        all_queries = yaml.safe_load(f)
+
+    day = datetime.now(timezone.utc).strftime("%A").lower()
+    queries = all_queries.get(day, all_queries.get("monday", []))
+    log.info("Running %d queries for %s", len(queries), day)
+
+    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    gemini_model = genai.GenerativeModel(
+        "gemini-1.5-flash",
+        system_instruction=GEMINI_SYSTEM,
+    )
+    supabase_client = create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_SERVICE_ROLE_KEY"],
+    )
+
+    run_discovery(
+        queries=queries,
+        brave_key=os.environ["BRAVE_API_KEY"],
+        gemini_model=gemini_model,
+        supabase_client=supabase_client,
+        webhook_url=os.environ["VERCEL_DEPLOY_HOOK_URL"],
+    )
+
+
+if __name__ == "__main__":
+    main()
