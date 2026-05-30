@@ -200,6 +200,7 @@ def evaluate_with_gemini(candidate: dict, model) -> Optional[dict]:
     )
     try:
         response = model.generate_content(prompt)
+        time.sleep(4)  # stay under 15 req/min free-tier limit
         parsed = parse_gemini_response(response.text)
         if parsed is None or not parsed.get("is_ai_tool"):
             reason = parsed.get("skip_reason") if parsed else "parse error"
@@ -213,7 +214,7 @@ def evaluate_with_gemini(candidate: dict, model) -> Optional[dict]:
 
 def write_tool_to_supabase(client, tool_data: dict) -> bool:
     """Upsert a single tool row. Returns True on success."""
-    logo_domain = tool_data.pop("logo_domain", None) or extract_domain(tool_data.get("url", ""))
+    logo_domain = tool_data.get("logo_domain") or extract_domain(tool_data.get("url", ""))
     row = {
         "id": tool_data["slug"],
         "name": tool_data["name"],
@@ -270,8 +271,9 @@ def run_discovery(
     """Full pipeline. Returns count of new tools added."""
     # Load existing tools for deduplication
     existing = supabase_client.table("tools").select("url,name").execute()
-    existing_domains = {extract_domain(r["url"]) for r in existing.data}
-    existing_names = [r["name"] for r in existing.data]
+    rows = existing.data or []
+    existing_domains = {extract_domain(r["url"]) for r in rows}
+    existing_names = [r["name"] for r in rows]
 
     # Search
     raw: list[dict] = []
@@ -310,7 +312,6 @@ def run_discovery(
         tool_data = evaluate_with_gemini(candidate, gemini_model)
         if tool_data and write_tool_to_supabase(supabase_client, tool_data):
             new_count += 1
-        time.sleep(4)
 
     log.info("Added %d new tools", new_count)
 
@@ -324,8 +325,12 @@ def run_discovery(
 
 def main() -> None:
     queries_path = os.path.join(os.path.dirname(__file__), "queries.yaml")
-    with open(queries_path) as f:
-        all_queries = yaml.safe_load(f)
+    try:
+        with open(queries_path) as f:
+            all_queries = yaml.safe_load(f)
+    except (FileNotFoundError, yaml.YAMLError) as exc:
+        log.error("Failed to load queries.yaml: %s", exc)
+        raise SystemExit(1)
 
     day = datetime.now(timezone.utc).strftime("%A").lower()
     queries = all_queries.get(day, all_queries.get("monday", []))

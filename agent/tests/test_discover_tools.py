@@ -127,3 +127,97 @@ class TestFetchPageText:
             result = fetch_page_text("https://example.com", max_chars=50)
 
         assert len(result) == 50
+
+
+class TestSearchBrave:
+    def test_returns_parsed_results(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {
+            "web": {
+                "results": [
+                    {"title": "Tool A", "url": "https://toola.com", "description": "Does AI stuff"},
+                    {"title": "Tool B", "url": "https://toolb.io", "description": "More AI"},
+                ]
+            }
+        }
+        mock_resp.raise_for_status = MagicMock()
+
+        with patch("requests.get", return_value=mock_resp):
+            from discover_tools import search_brave
+            results = search_brave("new AI tools", api_key="fake-key")
+
+        assert len(results) == 2
+        assert results[0] == {"title": "Tool A", "url": "https://toola.com", "description": "Does AI stuff"}
+
+    def test_raises_on_http_error(self):
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = Exception("401 Unauthorized")
+
+        with patch("requests.get", return_value=mock_resp):
+            from discover_tools import search_brave
+            with pytest.raises(Exception, match="401"):
+                search_brave("query", api_key="bad-key")
+
+    def test_returns_empty_list_on_no_results(self):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"web": {"results": []}}
+        mock_resp.raise_for_status = MagicMock()
+
+        with patch("requests.get", return_value=mock_resp):
+            from discover_tools import search_brave
+            results = search_brave("obscure query", api_key="fake-key")
+
+        assert results == []
+
+
+class TestWriteToolToSupabase:
+    def _sample_tool(self):
+        return {
+            "name": "TestTool",
+            "slug": "testtool",
+            "tagline": "A great AI tool",
+            "description": "Does great things.",
+            "url": "https://testtool.com",
+            "logo_domain": "testtool.com",
+            "category": "writing-productivity",
+            "tags": ["writing", "ai"],
+            "pricing": "freemium",
+            "indian_pricing": None,
+            "rating": 4.0,
+            "best_for_india": False,
+            "free_forever": False,
+            "pros": ["Good UI", "Fast"],
+            "cons": ["Limited free tier"],
+        }
+
+    def test_upserts_and_returns_true_on_success(self):
+        mock_client = MagicMock()
+        from discover_tools import write_tool_to_supabase
+        result = write_tool_to_supabase(mock_client, self._sample_tool())
+
+        assert result is True
+        mock_client.table.assert_called_once_with("tools")
+        mock_client.table().upsert.assert_called_once()
+        # Verify on_conflict is slug
+        _, kwargs = mock_client.table().upsert.call_args
+        assert kwargs.get("on_conflict") == "slug"
+
+    def test_returns_false_on_supabase_error(self):
+        mock_client = MagicMock()
+        mock_client.table().upsert().execute.side_effect = Exception("DB error")
+
+        from discover_tools import write_tool_to_supabase
+        result = write_tool_to_supabase(mock_client, self._sample_tool())
+
+        assert result is False
+
+    def test_does_not_mutate_input_dict(self):
+        mock_client = MagicMock()
+        tool = self._sample_tool()
+        original_keys = set(tool.keys())
+
+        from discover_tools import write_tool_to_supabase
+        write_tool_to_supabase(mock_client, tool)
+
+        # logo_domain should still be present (not popped)
+        assert set(tool.keys()) == original_keys
