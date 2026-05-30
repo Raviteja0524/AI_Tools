@@ -1,5 +1,4 @@
-import toolsData from '@/data/tools.json';
-import categoriesData from '@/data/categories.json';
+import { supabase } from '@/lib/supabase';
 
 export interface Tool {
   id: string;
@@ -33,8 +32,60 @@ export interface Category {
   description: string;
 }
 
-export const tools = toolsData as Tool[];
-export const categories = categoriesData as Category[];
+function mapTool(row: Record<string, unknown>): Tool {
+  return {
+    id:            row.id            as string,
+    name:          row.name          as string,
+    slug:          row.slug          as string,
+    tagline:       row.tagline       as string,
+    description:   row.description   as string,
+    logo:          row.logo          as string,
+    url:           row.url           as string,
+    affiliateUrl:  (row.affiliate_url  as string  | null) ?? undefined,
+    category:      row.category      as string,
+    tags:          (row.tags         as string[]) ?? [],
+    pricing:       row.pricing       as 'free' | 'freemium' | 'paid',
+    indianPricing: (row.indian_pricing as string  | null) ?? undefined,
+    rating:        Number(row.rating),
+    reviewCount:   (row.review_count  as number  | null) ?? undefined,
+    bestForIndia:  row.best_for_india as boolean,
+    freeForever:   row.free_forever   as boolean,
+    featured:      row.featured       as boolean,
+    languages:     (row.languages    as string[] | null) ?? undefined,
+    pros:          (row.pros         as string[]) ?? [],
+    cons:          (row.cons         as string[]) ?? [],
+    dateAdded:     row.date_added    as string,
+  };
+}
+
+function mapCategory(row: Record<string, unknown>): Category {
+  return {
+    id:          row.id          as string,
+    name:        row.name        as string,
+    icon:        row.icon        as string,
+    color:       row.color       as string,
+    description: row.description as string,
+  };
+}
+
+// Fetched once when module is first imported during the Astro build.
+const { data: rawTools, error: toolsError } = await supabase
+  .from('tools')
+  .select('*')
+  .eq('is_active', true)
+  .order('rating', { ascending: false });
+
+if (toolsError) throw new Error(`Supabase tools fetch failed: ${toolsError.message}`);
+
+const { data: rawCategories, error: categoriesError } = await supabase
+  .from('categories')
+  .select('*')
+  .order('name');
+
+if (categoriesError) throw new Error(`Supabase categories fetch failed: ${categoriesError.message}`);
+
+export const tools: Tool[]          = (rawTools      ?? []).map(mapTool);
+export const categories: Category[] = (rawCategories ?? []).map(mapCategory);
 
 export function getToolBySlug(slug: string): Tool | undefined {
   return tools.find(t => t.slug === slug);
@@ -81,8 +132,8 @@ export function getToolCountByPricing(pricing: 'free' | 'freemium' | 'paid'): nu
 }
 
 export function renderStars(rating: number): string {
-  const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5 ? 1 : 0;
+  const full  = Math.floor(rating);
+  const half  = rating % 1 >= 0.5 ? 1 : 0;
   const empty = 5 - full - half;
   return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
 }
