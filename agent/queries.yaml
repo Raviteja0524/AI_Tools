@@ -1,0 +1,23 @@
+# agent/queries.yaml
+# Queries rotate by weekday. Monday and Thursday are the cron days.
+# Add/remove queries freely — each run uses the day's list.
+
+monday:
+  - "new AI tools developers 2026"
+  - "free AI coding assistant 2026"
+  - "best AI writing tools free 2026"
+  - "new AI productivity tools 2026"
+  - "local LLM tools 2026 free"
+  - "AI image generation free tier 2026"
+  - "AI tools for students free 2026"
+  - "AI research tools free 2026"
+
+thursday:
+  - "new AI chatbot tools 2026"
+  - "free AI tools Indian users"
+  - "AI video tools free 2026"
+  - "AI audio transcription free 2026"
+  - "best AI tools for freelancers 2026"
+  - "AI automation tools free 2026"
+  - "new generative AI tools 2026"
+  - "open source AI tools 2026"
