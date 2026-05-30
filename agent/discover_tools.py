@@ -40,11 +40,18 @@ def extract_domain(url: str) -> str:
 
 
 def is_blocked_domain(url: str) -> bool:
-    """True if the URL's domain is on the blocklist."""
-    return extract_domain(url) in DOMAIN_BLOCKLIST
+    """True if the URL's domain (or a parent domain) is on the blocklist."""
+    domain = extract_domain(url)
+    if domain in DOMAIN_BLOCKLIST:
+        return True
+    return any(domain.endswith("." + blocked) for blocked in DOMAIN_BLOCKLIST)
 
 
-_SHORT_WORDS = frozenset({"ai", "ml", "ar", "vr", "io", "ui", "ux", "it"})
+_SHORT_WORDS = frozenset({
+    "ai", "ml", "ar", "vr", "io", "ui", "ux", "it",  # 2-char
+    "llm", "gpt", "api", "app", "new", "best", "top", "pro", "free",  # 3-char
+    "tool", "tools", "plus", "lite", "open",  # 4-char
+})
 
 
 def is_name_similar(name: str, existing_names: list[str], threshold: int = 3) -> bool:

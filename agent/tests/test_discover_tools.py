@@ -47,6 +47,9 @@ class TestIsBlockedDomain:
     def test_perplexity_allowed(self):
         assert is_blocked_domain("https://perplexity.ai") is False
 
+    def test_subdomain_of_blocked_domain(self):
+        assert is_blocked_domain("https://blog.medium.com/article") is True
+
 
 class TestIsNameSimilar:
     def test_identical_name(self):
@@ -56,15 +59,22 @@ class TestIsNameSimilar:
         assert is_name_similar("Runway ML", ["ChatGPT", "Perplexity"]) is False
 
     def test_two_shared_words_not_enough(self):
-        # "AI Writing Tool" vs "AI Writing Assistant" → 2 shared words < threshold=3
+        # After filtering short/generic tokens ("ai" removed), only "writing" is shared
+        # — 1 meaningful word < effective threshold of 2, so not similar
         assert is_name_similar("AI Writing Tool", ["AI Writing Assistant"]) is False
 
     def test_three_shared_words_match(self):
-        # "OpenAI ChatGPT Plus" vs "OpenAI ChatGPT Free" → 3 shared >= 3
+        # After filtering generic tokens ("plus"/"free" removed), "openai" and "chatgpt"
+        # are shared — 2 meaningful words >= effective threshold of 2, so similar
         assert is_name_similar("OpenAI ChatGPT Plus", ["OpenAI ChatGPT Free"]) is True
 
     def test_empty_existing_list(self):
         assert is_name_similar("Some Tool", []) is False
+
+    def test_generic_tokens_do_not_trigger_similarity(self):
+        # "AI Tool" and "AI Tool Kit" share only generic tokens that are filtered out
+        # — no meaningful overlap, so not similar
+        assert is_name_similar("AI Tool", ["AI Tool Kit"]) is False
 
 
 class TestParseGeminiResponse:
