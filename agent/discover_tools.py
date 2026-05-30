@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import time
-import urllib.error
 import urllib.request
 from datetime import date, datetime, timezone
 from typing import Optional
@@ -214,41 +213,49 @@ def evaluate_with_gemini(candidate: dict, model) -> Optional[dict]:
 
 def write_tool_to_supabase(client, tool_data: dict) -> bool:
     """Upsert a single tool row. Returns True on success."""
-    logo_domain = tool_data.get("logo_domain") or extract_domain(tool_data.get("url", ""))
-    row = {
-        "id": tool_data["slug"],
-        "name": tool_data["name"],
-        "slug": tool_data["slug"],
-        "tagline": tool_data.get("tagline", ""),
-        "description": tool_data.get("description", ""),
-        "logo": f"https://logo.clearbit.com/{logo_domain}" if logo_domain else "",
-        "url": tool_data["url"],
-        "affiliate_url": None,
-        "category": tool_data.get("category", "writing-productivity"),
-        "tags": tool_data.get("tags", []),
-        "pricing": tool_data.get("pricing", "freemium"),
-        "indian_pricing": tool_data.get("indian_pricing"),
-        "rating": float(tool_data.get("rating", 3.8)),
-        "review_count": None,
-        "best_for_india": bool(tool_data.get("best_for_india", False)),
-        "free_forever": bool(tool_data.get("free_forever", False)),
-        "featured": False,
-        "languages": [],
-        "pros": tool_data.get("pros", []),
-        "cons": tool_data.get("cons", []),
-        "date_added": date.today().isoformat(),
-        "is_active": True,
-        "source": "agent",
-        "last_synced_at": datetime.now(timezone.utc).isoformat(),
-        "needs_review": False,
-        "agent_notes": None,
-    }
     try:
+        slug = tool_data.get("slug", "")
+        name = tool_data.get("name", "")
+        url = tool_data.get("url", "")
+        if not slug or not name or not url:
+            log.warning("Skipping tool with missing required fields: %r", {k: tool_data.get(k) for k in ("slug", "name", "url")})
+            return False
+        logo_domain = tool_data.get("logo_domain") or extract_domain(url)
+        _pricing_raw = (tool_data.get("pricing") or "freemium").lower().strip()
+        pricing = _pricing_raw if _pricing_raw in {"free", "freemium", "paid"} else "freemium"
+        row = {
+            "id": slug,
+            "name": name,
+            "slug": slug,
+            "tagline": tool_data.get("tagline", ""),
+            "description": tool_data.get("description", ""),
+            "logo": f"https://logo.clearbit.com/{logo_domain}" if logo_domain else "",
+            "url": url,
+            "affiliate_url": None,
+            "category": tool_data.get("category", "writing-productivity"),
+            "tags": tool_data.get("tags", []),
+            "pricing": pricing,
+            "indian_pricing": tool_data.get("indian_pricing"),
+            "rating": float(tool_data.get("rating", 3.8)),
+            "review_count": None,
+            "best_for_india": bool(tool_data.get("best_for_india", False)),
+            "free_forever": bool(tool_data.get("free_forever", False)),
+            "featured": False,
+            "languages": [],
+            "pros": tool_data.get("pros", []),
+            "cons": tool_data.get("cons", []),
+            "date_added": date.today().isoformat(),
+            "is_active": True,
+            "source": "agent",
+            "last_synced_at": datetime.now(timezone.utc).isoformat(),
+            "needs_review": False,
+            "agent_notes": None,
+        }
         client.table("tools").upsert(row, on_conflict="slug").execute()
-        log.info("Upserted: %s (%s)", row["name"], row["slug"])
+        log.info("Upserted: %s (%s)", name, slug)
         return True
     except Exception as exc:
-        log.error("Supabase write failed for %s: %s", row["slug"], exc)
+        log.error("Supabase write failed for %s: %s", tool_data.get("slug", "?"), exc)
         return False
 
 
@@ -270,10 +277,11 @@ def run_discovery(
 ) -> int:
     """Full pipeline. Returns count of new tools added."""
     # Load existing tools for deduplication
-    existing = supabase_client.table("tools").select("url,name").execute()
+    existing = supabase_client.table("tools").select("url,name,slug").limit(10000).execute()
     rows = existing.data or []
     existing_domains = {extract_domain(r["url"]) for r in rows}
     existing_names = [r["name"] for r in rows]
+    existing_slugs = {r["slug"] for r in rows}
 
     # Search
     raw: list[dict] = []
@@ -310,8 +318,13 @@ def run_discovery(
         if new_count >= MAX_NEW_TOOLS:
             break
         tool_data = evaluate_with_gemini(candidate, gemini_model)
-        if tool_data and write_tool_to_supabase(supabase_client, tool_data):
-            new_count += 1
+        if tool_data:
+            if tool_data.get("slug") in existing_slugs:
+                log.info("Skipping existing slug: %s", tool_data.get("slug"))
+                continue
+            if write_tool_to_supabase(supabase_client, tool_data):
+                existing_slugs.add(tool_data["slug"])  # prevent duplicates within same run
+                new_count += 1
 
     log.info("Added %d new tools", new_count)
 
