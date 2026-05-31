@@ -347,7 +347,7 @@ def main() -> None:
 
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     gemini_model = genai.GenerativeModel(
-        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
         system_instruction=GEMINI_SYSTEM,
     )
     supabase_client = create_client(
