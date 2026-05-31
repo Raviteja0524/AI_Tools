@@ -184,7 +184,7 @@ def search_tavily(query: str, api_key: str) -> list[dict]:
 
 def evaluate_with_groq(candidate: dict, client) -> Optional[dict]:
     """Send a candidate to Groq. Returns parsed tool dict or None if not an AI tool."""
-    page_text = fetch_page_text(candidate["url"])
+    page_text = fetch_page_text(candidate["url"], max_chars=1500)
     prompt = PROMPT_TEMPLATE.format(
         url=candidate["url"],
         title=candidate["title"],
