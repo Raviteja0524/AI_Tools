@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 import google.generativeai as genai
 import requests
 import yaml
+from tavily import TavilyClient
 from supabase import create_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -166,21 +167,16 @@ def parse_gemini_response(text: str) -> Optional[dict]:
         return None
 
 
-def search_brave(query: str, api_key: str) -> list[dict]:
-    """Query Brave Search API. Returns list of {title, url, description} dicts."""
-    resp = requests.get(
-        "https://api.search.brave.com/res/v1/web/search",
-        headers={"Accept": "application/json", "X-Subscription-Token": api_key},
-        params={"q": query, "count": 10, "text_decorations": False},
-        timeout=10,
-    )
-    resp.raise_for_status()
-    results = resp.json().get("web", {}).get("results", [])
+def search_tavily(query: str, api_key: str) -> list[dict]:
+    """Query Tavily Search API. Returns list of {title, url, description} dicts."""
+    client = TavilyClient(api_key=api_key)
+    resp = client.search(query, max_results=10)
+    results = resp.get("results", [])
     return [
         {
             "title": r.get("title", ""),
             "url": r.get("url", ""),
-            "description": r.get("description", ""),
+            "description": r.get("content", ""),
         }
         for r in results
     ]
@@ -270,7 +266,7 @@ def trigger_vercel_rebuild(webhook_url: str) -> None:
 
 def run_discovery(
     queries: list[str],
-    brave_key: str,
+    tavily_key: str,
     gemini_model,
     supabase_client,
     webhook_url: str,
@@ -287,9 +283,9 @@ def run_discovery(
     raw: list[dict] = []
     for query in queries:
         try:
-            raw.extend(search_brave(query, brave_key))
+            raw.extend(search_tavily(query, tavily_key))
         except Exception as exc:
-            log.warning("Brave search failed %r: %s", query, exc)
+            log.warning("Tavily search failed %r: %s", query, exc)
         time.sleep(1)
 
     # Deduplicate and filter
@@ -361,7 +357,7 @@ def main() -> None:
 
     run_discovery(
         queries=queries,
-        brave_key=os.environ["BRAVE_API_KEY"],
+        tavily_key=os.environ["TAVILY_API_KEY"],
         gemini_model=gemini_model,
         supabase_client=supabase_client,
         webhook_url=os.environ["VERCEL_DEPLOY_HOOK_URL"],

@@ -129,43 +129,39 @@ class TestFetchPageText:
         assert len(result) == 50
 
 
-class TestSearchBrave:
+class TestSearchTavily:
     def test_returns_parsed_results(self):
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {
-            "web": {
-                "results": [
-                    {"title": "Tool A", "url": "https://toola.com", "description": "Does AI stuff"},
-                    {"title": "Tool B", "url": "https://toolb.io", "description": "More AI"},
-                ]
-            }
+        mock_client = MagicMock()
+        mock_client.search.return_value = {
+            "results": [
+                {"title": "Tool A", "url": "https://toola.com", "content": "Does AI stuff"},
+                {"title": "Tool B", "url": "https://toolb.io", "content": "More AI"},
+            ]
         }
-        mock_resp.raise_for_status = MagicMock()
 
-        with patch("requests.get", return_value=mock_resp):
-            from discover_tools import search_brave
-            results = search_brave("new AI tools", api_key="fake-key")
+        with patch("discover_tools.TavilyClient", return_value=mock_client):
+            from discover_tools import search_tavily
+            results = search_tavily("new AI tools", api_key="fake-key")
 
         assert len(results) == 2
         assert results[0] == {"title": "Tool A", "url": "https://toola.com", "description": "Does AI stuff"}
 
-    def test_raises_on_http_error(self):
-        mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = Exception("401 Unauthorized")
+    def test_raises_on_search_error(self):
+        mock_client = MagicMock()
+        mock_client.search.side_effect = Exception("401 Unauthorized")
 
-        with patch("requests.get", return_value=mock_resp):
-            from discover_tools import search_brave
+        with patch("discover_tools.TavilyClient", return_value=mock_client):
+            from discover_tools import search_tavily
             with pytest.raises(Exception, match="401"):
-                search_brave("query", api_key="bad-key")
+                search_tavily("query", api_key="bad-key")
 
     def test_returns_empty_list_on_no_results(self):
-        mock_resp = MagicMock()
-        mock_resp.json.return_value = {"web": {"results": []}}
-        mock_resp.raise_for_status = MagicMock()
+        mock_client = MagicMock()
+        mock_client.search.return_value = {"results": []}
 
-        with patch("requests.get", return_value=mock_resp):
-            from discover_tools import search_brave
-            results = search_brave("obscure query", api_key="fake-key")
+        with patch("discover_tools.TavilyClient", return_value=mock_client):
+            from discover_tools import search_tavily
+            results = search_tavily("obscure query", api_key="fake-key")
 
         assert results == []
 
