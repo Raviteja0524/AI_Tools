@@ -13,7 +13,7 @@ from discover_tools import (
     fetch_page_text,
     is_blocked_domain,
     is_name_similar,
-    parse_gemini_response,
+    parse_llm_response,
 )
 
 
@@ -77,26 +77,26 @@ class TestIsNameSimilar:
         assert is_name_similar("AI Tool", ["AI Tool Kit"]) is False
 
 
-class TestParseGeminiResponse:
+class TestParseLLMResponse:
     def test_valid_json_object(self):
         data = {"is_ai_tool": True, "name": "TestTool"}
-        assert parse_gemini_response(json.dumps(data)) == data
+        assert parse_llm_response(json.dumps(data)) == data
 
     def test_strips_json_code_fence(self):
         text = '```json\n{"is_ai_tool": false, "skip_reason": "blog"}\n```'
-        result = parse_gemini_response(text)
+        result = parse_llm_response(text)
         assert result == {"is_ai_tool": False, "skip_reason": "blog"}
 
     def test_strips_plain_code_fence(self):
         text = '```\n{"is_ai_tool": true}\n```'
-        result = parse_gemini_response(text)
+        result = parse_llm_response(text)
         assert result == {"is_ai_tool": True}
 
     def test_invalid_json_returns_none(self):
-        assert parse_gemini_response("not valid json") is None
+        assert parse_llm_response("not valid json") is None
 
     def test_empty_string_returns_none(self):
-        assert parse_gemini_response("") is None
+        assert parse_llm_response("") is None
 
 
 class TestFetchPageText:

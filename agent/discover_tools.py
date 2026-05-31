@@ -10,9 +10,9 @@ from datetime import date, datetime, timezone
 from typing import Optional
 from urllib.parse import urlparse
 
-import google.generativeai as genai
 import requests
 import yaml
+from groq import Groq
 from tavily import TavilyClient
 from supabase import create_client
 
@@ -29,14 +29,14 @@ DOMAIN_BLOCKLIST = frozenset({
 MAX_CANDIDATES = 15
 MAX_NEW_TOOLS = 10
 
-GEMINI_SYSTEM = (
+SYSTEM_PROMPT = (
     "You are an AI tool curator. Given a URL, page excerpt, and search snippet, "
     "determine if this is a real standalone AI-powered tool (not a blog post, "
     "listicle, or company homepage for a non-AI business). If it is, extract "
     "structured data. Return JSON only. No explanation."
 )
 
-GEMINI_PROMPT_TEMPLATE = """\
+PROMPT_TEMPLATE = """\
 Tool URL: {url}
 Tool name from search: {title}
 Search snippet: {snippet}
@@ -150,8 +150,8 @@ def fetch_page_text(url: str, max_chars: int = 3000, timeout: int = 5) -> str:
         return ""
 
 
-def parse_gemini_response(text: str) -> Optional[dict]:
-    """Parse Gemini's JSON output. Strips markdown fences if present."""
+def parse_llm_response(text: str) -> Optional[dict]:
+    """Parse LLM JSON output. Strips markdown fences if present."""
     text = text.strip()
     if text.startswith("```"):
         lines = text.splitlines()
@@ -163,7 +163,7 @@ def parse_gemini_response(text: str) -> Optional[dict]:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        log.warning("Failed to parse Gemini JSON: %r", text[:200])
+        log.warning("Failed to parse LLM JSON: %r", text[:200])
         return None
 
 
@@ -182,28 +182,36 @@ def search_tavily(query: str, api_key: str) -> list[dict]:
     ]
 
 
-def evaluate_with_gemini(candidate: dict, model) -> Optional[dict]:
-    """
-    Send a candidate to Gemini. Returns parsed tool dict or None if not an AI tool.
-    """
+def evaluate_with_groq(candidate: dict, client) -> Optional[dict]:
+    """Send a candidate to Groq. Returns parsed tool dict or None if not an AI tool."""
     page_text = fetch_page_text(candidate["url"])
-    prompt = GEMINI_PROMPT_TEMPLATE.format(
+    prompt = PROMPT_TEMPLATE.format(
         url=candidate["url"],
         title=candidate["title"],
         snippet=candidate["description"],
         page_text=page_text or "(page unavailable)",
     )
     try:
-        response = model.generate_content(prompt)
-        time.sleep(4)  # stay under 15 req/min free-tier limit
-        parsed = parse_gemini_response(response.text)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            max_tokens=1024,
+            response_format={"type": "json_object"},
+        )
+        time.sleep(2)  # stay under 30 req/min free-tier limit
+        text = response.choices[0].message.content
+        parsed = parse_llm_response(text)
         if parsed is None or not parsed.get("is_ai_tool"):
             reason = parsed.get("skip_reason") if parsed else "parse error"
             log.info("Skip %s: %s", candidate["url"], reason)
             return None
         return parsed
     except Exception as exc:
-        log.warning("Gemini error for %s: %s", candidate["url"], exc)
+        log.warning("Groq error for %s: %s", candidate["url"], exc)
         return None
 
 
@@ -267,7 +275,7 @@ def trigger_vercel_rebuild(webhook_url: str) -> None:
 def run_discovery(
     queries: list[str],
     tavily_key: str,
-    gemini_model,
+    groq_client,
     supabase_client,
     webhook_url: str,
 ) -> int:
@@ -313,7 +321,7 @@ def run_discovery(
     for candidate in candidates:
         if new_count >= MAX_NEW_TOOLS:
             break
-        tool_data = evaluate_with_gemini(candidate, gemini_model)
+        tool_data = evaluate_with_groq(candidate, groq_client)
         if tool_data:
             if tool_data.get("slug") in existing_slugs:
                 log.info("Skipping existing slug: %s", tool_data.get("slug"))
@@ -345,11 +353,7 @@ def main() -> None:
     queries = all_queries.get(day, all_queries.get("monday", []))
     log.info("Running %d queries for %s", len(queries), day)
 
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    gemini_model = genai.GenerativeModel(
-        "gemini-2.0-flash-lite",
-        system_instruction=GEMINI_SYSTEM,
-    )
+    groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
     supabase_client = create_client(
         os.environ["SUPABASE_URL"],
         os.environ["SUPABASE_SERVICE_ROLE_KEY"],
@@ -358,7 +362,7 @@ def main() -> None:
     run_discovery(
         queries=queries,
         tavily_key=os.environ["TAVILY_API_KEY"],
-        gemini_model=gemini_model,
+        groq_client=groq_client,
         supabase_client=supabase_client,
         webhook_url=os.environ["VERCEL_DEPLOY_HOOK_URL"],
     )
